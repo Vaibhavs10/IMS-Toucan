@@ -8,6 +8,7 @@ from typing import List
 import torch
 
 from Layers.Attention import MultiHeadedAttention
+from Layers.Attention import NystromAttention
 from Layers.LayerNorm import LayerNorm
 from Layers.MultiSequential import repeat
 from Layers.PositionalEncoding import PositionalEncoding
@@ -51,7 +52,7 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
 
     """
 
-    def __init__(self, odim, self_att_type="multihead_softmax_att", attention_dim=256, attention_heads=4, conv_wshare=4, conv_kernel_length=11,
+    def __init__(self, odim, self_att_type="nystrom_att", attention_dim=256, attention_heads=4, conv_wshare=4, conv_kernel_length=11,
                  conv_usebias=False, linear_units=2048, num_blocks=6, dropout_rate=0.1, positional_dropout_rate=0.1, self_attention_dropout_rate=0.0,
                  src_attention_dropout_rate=0.0, input_layer="embed", use_output_layer=True, pos_enc_class=PositionalEncoding, normalize_before=True,
                  concat_after=False, ):
@@ -74,7 +75,7 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
         self.normalize_before = normalize_before
         self.decoders = repeat(num_blocks,
                                lambda lnum: DecoderLayer(attention_dim,
-                                                         self_att_dict[self_att_type](attention_heads, attention_dim, self_attention_dropout_rate),
+                                                         NystromAttention(dim=attention_dim, heads=attention_heads, dim_head=int(attention_dim/attention_heads), num_landmarks=64),
                                                          MultiHeadedAttention(attention_heads, attention_dim, src_attention_dropout_rate),
                                                          PositionwiseFeedForward(attention_dim, linear_units, dropout_rate),
                                                          dropout_rate,
