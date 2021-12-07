@@ -73,21 +73,23 @@ class DecoderLayer(nn.Module):
 
         if cache is None:
             tgt_q = tgt
-            tgt_q_mask = tgt_mask
+            tgt_q_mask = tgt_mask[:,:,-1]
         else:
+            tgt_q = tgt
+            tgt_q_mask = tgt_mask[:,:,-1]
             # compute only the last frame query keeping dim: max_time_out -> 1
-            assert cache.shape == (tgt.shape[0], tgt.shape[1] - 1, self.size,), f"{cache.shape} == {(tgt.shape[0], tgt.shape[1] - 1, self.size)}"
-            tgt_q = tgt[:, -1:, :]
-            residual = residual[:, -1:, :]
-            tgt_q_mask = None
-            if tgt_mask is not None:
-                tgt_q_mask = tgt_mask[:, -1:, :]
+            # assert cache.shape == (tgt.shape[0], tgt.shape[1] - 1, self.size,), f"{cache.shape} == {(tgt.shape[0], tgt.shape[1] - 1, self.size)}"
+            # tgt_q = tgt[:, -1:, :]
+            # residual = residual[:, -1:, :]
+            # tgt_q_mask = None
+            # if tgt_mask is not None:
+            #     tgt_q_mask = tgt_mask[:, -1:, :]
 
         if self.concat_after:
-            tgt_concat = torch.cat((tgt_q, self.self_attn(tgt_q, tgt, tgt, tgt_q_mask)), dim=-1)
+            tgt_concat = torch.cat((tgt_q, self.self_attn(tgt, mask=tgt_q_mask)), dim=-1)
             x = residual + self.concat_linear1(tgt_concat)
         else:
-            x = residual + self.dropout(self.self_attn(tgt_q, tgt, tgt, tgt_q_mask))
+            x = residual + self.dropout(self.self_attn(tgt, mask=tgt_q_mask))
         if not self.normalize_before:
             x = self.norm1(x)
 
@@ -109,7 +111,7 @@ class DecoderLayer(nn.Module):
         if not self.normalize_before:
             x = self.norm3(x)
 
-        if cache is not None:
-            x = torch.cat([cache, x], dim=1)
+        # if cache is not None:
+        #     x = torch.cat([cache, x], dim=1)
 
         return x, tgt_mask, memory, memory_mask
