@@ -13,7 +13,8 @@ from Layers.LayerNorm import LayerNorm
 from Layers.MultiSequential import repeat
 from Layers.PositionalEncoding import PositionalEncoding
 from Layers.PositionwiseFeedForward import PositionwiseFeedForward
-from Layers.TransformerTTSDecoderLayer import DecoderLayer
+#from Layers.TransformerTTSDecoderLayer import DecoderLayer
+from Layers.TransformerTTSDecoderLayer_LN import DecoderLayer
 from Utility.utils import BatchScorerInterface
 from Utility.utils import subsequent_mask
 
