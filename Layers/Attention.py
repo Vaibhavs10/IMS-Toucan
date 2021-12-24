@@ -9,7 +9,7 @@ import math
 import numpy
 import torch
 from torch import nn
-
+from performer_pytorch import FastAttention as PerformerAttention
 from Utility.utils import make_non_pad_mask
 
 
