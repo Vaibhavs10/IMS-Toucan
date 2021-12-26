@@ -75,7 +75,7 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
         self.normalize_before = normalize_before
         self.decoders = repeat(num_blocks,
                                lambda lnum: DecoderLayer(attention_dim,
-                                                         self_att_dict[self_att_type](attention_heads, attention_dim, self_attention_dropout_rate),
+                                                         self_att_dict["performer"](attention_heads, attention_dim, self_attention_dropout_rate),
                                                          MultiHeadedAttention(attention_heads, attention_dim, src_attention_dropout_rate),
                                                          PositionwiseFeedForward(attention_dim, linear_units, dropout_rate),
                                                          dropout_rate,
