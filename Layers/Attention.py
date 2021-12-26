@@ -9,7 +9,11 @@ import math
 import numpy
 import torch
 from torch import nn
-from performer_pytorch import FastAttention as PerformerAttention
+from performer_pytorch import FastAttention as PerformerFastAttention
+from functools import reduce
+from operator import mul
+import torch.nn.functional as F
+
 from Utility.utils import make_non_pad_mask
 
 
@@ -326,3 +330,58 @@ class GuidedMultiHeadAttentionLoss(GuidedAttentionLoss):
             self._reset_masks()
 
         return self.alpha * loss
+
+
+class PerformerAttention(nn.Module):
+
+    def __init__(self, n_head, n_feat, dropout_rate):
+        """
+        Performer attention layer. Currently only implemented for decoder self-attention, marked by causal=True in
+        the PerformerFastAttention initialization which automatically applies masking.
+
+        Hyperparameters to adjust for this attention mechanism:
+            - nb_features (number of random features): The more random features are used, the closer is the
+            approximation of the Performer to the original softmax attention, but the more costly is the operation.
+
+        Args:
+            n_head (int): The number of heads.
+            n_feat (int): The number of features.
+            dropout_rate (float): Dropout rate.
+        """
+        super(PerformerAttention, self).__init__()
+        self.n_head = n_head
+        self.dim_heads = n_feat // self.n_head
+        self.linear_q = nn.Linear(n_feat, n_feat)
+        self.linear_k = nn.Linear(n_feat, n_feat)
+        self.linear_v = nn.Linear(n_feat, n_feat)
+        self.linear_out = nn.Linear(n_feat, n_feat)
+        # causal = True because it's in the decoder -- no further masks are needed
+        self.fast_attention = PerformerFastAttention(dim_heads=self.dim_heads, nb_features=256, causal=True)
+        self.dropout = nn.Dropout(dropout_rate)
+
+    def forward(self, query, key, value, mask):
+        """
+        Compute fast Performer attention. Note that the mask is ignored because the fast attention module is already
+        set as being masked decoder attention (by setting causal=True).
+
+        Args:
+            query (torch.Tensor): Query tensor (#batch, time1, size).
+            key (torch.Tensor): Key tensor (#batch, time2, size).
+            value (torch.Tensor): Value tensor (#batch, time2, size).
+            mask (torch.Tensor): Mask tensor (#batch, 1, time2) or
+                (#batch, time1, time2).
+
+        Returns:
+            torch.Tensor: Output tensor (#batch, time1, d_model).
+        """
+        batch_size = query.shape[0]
+        # split and transpose to first dimension
+        query = self.linear_q(query).view(batch_size, -1, self.n_head, self.dim_heads).transpose(1, 2)
+        key = self.linear_k(key).view(batch_size, -1, self.n_head, self.dim_heads).transpose(1, 2)
+        value = self.linear_v(value).view(batch_size, -1, self.n_head, self.dim_heads).transpose(1, 2)
+
+        attn_out = self.fast_attention(query, key, value)
+        # convert back to original shape
+        attn_out = attn_out.transpose(1, 2).contiguous().view(batch_size, -1, self.n_head * self.dim_heads)
+        out = self.linear_out(attn_out)
+        return self.dropout(out)
