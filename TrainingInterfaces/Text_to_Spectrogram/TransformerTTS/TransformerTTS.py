@@ -392,7 +392,8 @@ class Transformer(torch.nn.Module, ABC):
 
             # calculate output and stop prob at index-th step
             y_masks = subsequent_mask(index).unsqueeze(0).to(x.device)
-            z, z_cache = self.decoder.forward_one_step(ys, y_masks, hs, cache=z_cache)  # (B, adim)
+            # z, z_cache = self.decoder.forward_one_step(ys, y_masks, hs, cache=z_cache)  # (B, adim)
+            z = self.decoder.forward_one_step(ys, y_masks, hs)  # (B, adim)
             outs += [self.feat_out(z).view(self.reduction_factor, self.odim)]  # [(r, odim), ...]
             probs += [torch.sigmoid(self.prob_out(z))[0]]  # [(r), ...]
 
