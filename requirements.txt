@@ -2,7 +2,6 @@ librosa==0.8.1
 matplotlib==3.3.4
 pyloudnorm==0.1.0
 SoundFile==0.10.3.post1
-torch==1.8.1
 torchaudio==0.8.1
 torchviz==0.0.1
 torch-complex==0.2.0
