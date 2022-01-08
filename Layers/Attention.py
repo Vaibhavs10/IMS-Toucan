@@ -5,15 +5,10 @@
 """Multi-Head Attention layer definition."""
 
 import math
-from einops import rearrange
 
 import numpy
 import torch
 from torch import nn
-from reformer_pytorch import LSHAttention, autopadder
-from functools import reduce
-from operator import mul
-import torch.nn.functional as F
 
 from Utility.utils import make_non_pad_mask
 
@@ -331,67 +326,3 @@ class GuidedMultiHeadAttentionLoss(GuidedAttentionLoss):
             self._reset_masks()
 
         return self.alpha * loss
-
-
-class ReformerAttention(nn.Module):
-
-    def __init__(self, n_head, n_feat, dropout_rate):
-        """
-        Reformer attention layer. Currently only implemented for decoder self-attention, marked by causal=True in
-        the LSHAttention initialization which automatically applies masking.
-
-        Hyperparameters to adjust for this attention mechanism:
-            - bucket_size (avg. size of each bucket): The bigger the buckets, the smaller is the probability to miss
-            a relevant item, but the more expensive is the attention operation.
-            - n_hashes (number of hash rounds): The more often hashing is repeated, the more stable are the results
-            and the smaller is the probability of ending up with non-optimal buckets, but the more costly is the
-            complete forward pass of the attention.
-
-        Args:
-            n_head (int): The number of heads.
-            n_feat (int): The number of features.
-            dropout_rate (float): Dropout rate.
-        """
-        super(ReformerAttention, self).__init__()
-        self.bucket_size = 64
-        # parameter n_hashes: 4 is permissible per author, 8 is the best but slower (according to lucidrains)
-        self.lsh_attention = LSHAttention(bucket_size=self.bucket_size, n_hashes=4, dropout=dropout_rate, causal=True)
-        self.n_head = n_head
-
-        self.linear_qk = nn.Linear(n_feat, n_feat)
-        self.linear_v = nn.Linear(n_feat, n_feat)
-        self.linear_out = nn.Linear(n_feat, n_feat)
-
-    def forward(self, query, key, value, mask):
-        """
-        Compute Reformer attention. Note that the mask is ignored because the LSH attention module is already
-        set as being masked decoder attention (by setting causal=True). Moreover, the key matrix is not used because
-        the Reformer attention requires a shared matrix for queries and keys, so only the query matrix is used for both.
-
-        Args:
-            query (torch.Tensor): Query tensor (#batch, time1, size).
-            key (torch.Tensor): Key tensor (#batch, time2, size).
-            value (torch.Tensor): Value tensor (#batch, time2, size).
-            mask (torch.Tensor): Mask tensor (#batch, 1, time2) or (#batch, time1, time2).
-
-        Returns:
-            torch.Tensor: Output tensor (#batch, time1, d_model).
-        """
-        b, t, s = query.shape
-        device = query.device
-
-        # We need to pad query and value to a sequence length that is divisible by bucket_size * 2
-        query = autopadder.pad_to_multiple(tensor=query, seqlen=t, multiple=self.bucket_size*2, dim=-2)
-        value = autopadder.pad_to_multiple(tensor=value, seqlen=t, multiple=self.bucket_size*2, dim=-2)
-
-        # create a mask that covers the positions added during padding
-        input_mask = torch.full((b, t), True, device=device, dtype=torch.bool)
-        input_mask = F.pad(input_mask, (0, query.shape[1] - t), value=False)
-
-        query_key = self.linear_qk(query)
-        value = self.linear_v(value)
-
-        out, attn, buckets = self.lsh_attention(query_key, value, input_mask=input_mask)
-        out = self.linear_out(out)
-        return out[:, 0:t]  # only return the positions that do not correspond to padding
-        
