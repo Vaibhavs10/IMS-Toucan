@@ -7,7 +7,7 @@ from typing import List
 
 import torch
 
-from Layers.Attention import MultiHeadedAttention
+from Layers.Attention import MultiHeadedAttention, ReformerAttention
 from Layers.LayerNorm import LayerNorm
 from Layers.MultiSequential import repeat
 from Layers.PositionalEncoding import PositionalEncoding
@@ -58,7 +58,8 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
         torch.nn.Module.__init__(self)
 
         self_att_dict = {
-            "multihead_softmax_att": MultiHeadedAttention
+            "multihead_softmax_att": MultiHeadedAttention,
+            "reformer": ReformerAttention
             # add more self-attention implementations here
         }
 
@@ -74,7 +75,7 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
         self.normalize_before = normalize_before
         self.decoders = repeat(num_blocks,
                                lambda lnum: DecoderLayer(attention_dim,
-                                                         self_att_dict[self_att_type](attention_heads, attention_dim, self_attention_dropout_rate),
+                                                         self_att_dict["reformer"](attention_heads, attention_dim, self_attention_dropout_rate),
                                                          MultiHeadedAttention(attention_heads, attention_dim, src_attention_dropout_rate),
                                                          PositionwiseFeedForward(attention_dim, linear_units, dropout_rate),
                                                          dropout_rate,
@@ -137,12 +138,15 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
 
         """
         x = self.embed(tgt)
-        if cache is None:
-            cache = [None] * len(self.decoders)
-        new_cache = []
-        for c, decoder in zip(cache, self.decoders):
-            x, tgt_mask, memory, memory_mask = decoder(x, tgt_mask, memory, None, cache=c)
-            new_cache.append(x)
+        # if cache is None:
+        #     cache = [None] * len(self.decoders)
+        # new_cache = []
+        # for c, decoder in zip(cache, self.decoders):
+        #     x, tgt_mask, memory, memory_mask = decoder(x, tgt_mask, memory, None, cache=c)
+        #     new_cache.append(x)
+
+        for decoder in self.decoders:
+            x, tgt_mask, memory, memory_mask = decoder(x, tgt_mask, memory, None, cache=None)
 
         if self.normalize_before:
             y = self.after_norm(x[:, -1])
@@ -151,7 +155,7 @@ class Decoder(BatchScorerInterface, torch.nn.Module):
         if self.output_layer is not None:
             y = torch.log_softmax(self.output_layer(y), dim=-1)
 
-        return y, new_cache
+        return y  # , new_cache
 
     # beam search API (see ScorerInterface)
     def score(self, ys, state, x):
