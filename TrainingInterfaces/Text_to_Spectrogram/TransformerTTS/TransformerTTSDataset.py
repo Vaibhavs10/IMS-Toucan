@@ -23,7 +23,7 @@ class TransformerTTSDataset(Dataset):
                  loading_processes=8,
                  lang="en",
                  min_len_in_seconds=1,
-                 max_len_in_seconds=20,
+                 max_len_in_seconds=35,
                  cut_silences=False,
                  rebuild_cache=False):
         self.speaker_embedding = speaker_embedding

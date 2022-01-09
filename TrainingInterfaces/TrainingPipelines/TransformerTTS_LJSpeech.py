@@ -27,7 +27,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
     if model_dir is not None:
         save_dir = model_dir
     else:
-        save_dir = os.path.join("Models", "TransformerTTS_LJSpeech")
+        save_dir = os.path.join("Models", "Vanilla_3xLJSpeech_4_000005")
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     if not os.path.exists(save_dir):
@@ -39,7 +39,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
                                       cache_dir=cache_dir,
                                       lang="en",
                                       min_len_in_seconds=1,
-                                      max_len_in_seconds=10,
+                                      max_len_in_seconds=35,
                                       rebuild_cache=False)
 
     model = Transformer(idim=166, odim=80, spk_embed_dim=None)
@@ -50,11 +50,11 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
                device=device,
                save_directory=save_dir,
                steps=300000,
-               batch_size=64,
+               batch_size=4,
                epochs_per_save=10,
                use_speaker_embedding=False,
                lang="en",
-               lr=0.001,
+               lr=0.000005,
                warmup_steps=8000,
                path_to_checkpoint=resume_checkpoint,
                fine_tune=finetune)
