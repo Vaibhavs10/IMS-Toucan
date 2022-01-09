@@ -98,6 +98,16 @@ def build_path_to_transcript_dict_ljspeech():
     return path_to_transcript
 
 
+def build_path_to_transcript_dict_3xljspeech():
+    path_to_transcript = dict()
+    for transcript_file in os.listdir("/mount/arbeitsdaten/synthesis/attention_projects/LJSpeech_3xlong_stripped/txt_long"):
+        with open("/mount/arbeitsdaten/synthesis/attention_projects/LJSpeech_3xlong_stripped/txt_long/" + transcript_file, 'r', encoding='utf8') as tf:
+            transcript = tf.read()
+        wav_path = "/mount/arbeitsdaten/synthesis/attention_projects/LJSpeech_3xlong_stripped/wav_long/" + transcript_file.rstrip(".txt") + ".wav"
+        path_to_transcript[wav_path] = transcript
+    return path_to_transcript
+
+
 def build_path_to_transcript_dict_css10de():
     path_to_transcript = dict()
     with open("/mount/resources/speech/corpora/CSS10/german/transcript.txt", encoding="utf8") as f:
