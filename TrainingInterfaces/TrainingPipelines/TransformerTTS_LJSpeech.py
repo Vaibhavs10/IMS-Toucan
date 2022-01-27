@@ -27,7 +27,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
     if model_dir is not None:
         save_dir = model_dir
     else:
-        save_dir = os.path.join("Models", "Reformer_256_0001")
+        save_dir = os.path.join("Models", "R_v_bt_64_lr_0001_b_46_bce_10_rf_2")
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     if not os.path.exists(save_dir):
@@ -50,7 +50,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
                device=device,
                save_directory=save_dir,
                steps=300000,
-               batch_size=20,
+               batch_size=46,
                epochs_per_save=10,
                use_speaker_embedding=False,
                lang="en",
