@@ -28,7 +28,7 @@ pipeline_dict = {
     "fast_LJSpeech"  : fast_LJSpeech,
     "melgan_LJSpeech": melgan_LJSpeech,
     "trans_LJSpeech" : trans_LJSpeech,
-    "trans_LJSpeech_3xlong" : trans_LJSpeech_3xlong,    
+    "trans_LJSpeech_3xlong" : trans_LJSpeech_3xlong,
 
     "fast_Nancy"     : fast_Nancy,
     "melgan_Nancy"   : melgan_Nancy,
