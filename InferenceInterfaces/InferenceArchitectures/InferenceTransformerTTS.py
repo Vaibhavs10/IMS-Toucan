@@ -26,7 +26,7 @@ class Transformer(torch.nn.Module, ABC):
                  positionwise_conv_kernel_size=1, use_scaled_pos_enc=True, use_batch_norm=True, encoder_normalize_before=True,
                  decoder_normalize_before=True, encoder_concat_after=True,  # True according to https://github.com/soobinseo/Transformer-TTS
                  decoder_concat_after=True,  # True according to https://github.com/soobinseo/Transformer-TTS
-                 reduction_factor=1, spk_embed_dim=None, spk_embed_integration_type="concat",  # training related
+                 reduction_factor=2, spk_embed_dim=None, spk_embed_integration_type="concat",  # training related
                  transformer_enc_dropout_rate=0.1, transformer_enc_positional_dropout_rate=0.1,
                  transformer_enc_attn_dropout_rate=0.1, transformer_dec_dropout_rate=0.1,
                  transformer_dec_positional_dropout_rate=0.1, transformer_dec_attn_dropout_rate=0.1,
@@ -35,7 +35,7 @@ class Transformer(torch.nn.Module, ABC):
                  # asymetric activations, this seems to work better than kaiming
                  init_enc_alpha=1.0, use_masking=False,  # either this or weighted masking, not both
                  use_weighted_masking=True,  # if there are severely different sized samples in one batch
-                 bce_pos_weight=7.0,  # scaling the loss of the stop token prediction
+                 bce_pos_weight=10.0,  # scaling the loss of the stop token prediction
                  loss_type="L1", use_guided_attn_loss=True, num_heads_applied_guided_attn=2, num_layers_applied_guided_attn=2,
                  modules_applied_guided_attn=("encoder-decoder",), guided_attn_loss_sigma=0.4,  # standard deviation from diagonal that is allowed
                  guided_attn_loss_lambda=25.0, legacy_model=False):
