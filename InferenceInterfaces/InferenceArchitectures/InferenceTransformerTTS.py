@@ -131,7 +131,10 @@ class Transformer(torch.nn.Module, ABC):
     def forward(self, text, speaker_embedding=None, return_atts=False):
         self.eval()
         x = text
-        xs = x.unsqueeze(0)
+        if len(x.shape) == 1:
+            xs = x.unsqueeze(0)
+        else:
+            xs = x
         hs, _ = self.encoder(xs, None)
         if self.spk_embed_dim is not None:
             speaker_embeddings = speaker_embedding.unsqueeze(0)
@@ -145,7 +148,7 @@ class Transformer(torch.nn.Module, ABC):
         while True:
             idx += 1
             y_masks = subsequent_mask(idx).unsqueeze(0).to(x.device)
-            z, z_cache = self.decoder.forward_one_step(ys, y_masks, hs, cache=z_cache)
+            z = self.decoder.forward_one_step(ys, y_masks, hs)
             outs += [self.feat_out(z).view(self.reduction_factor, self.odim)]
             probs += [torch.sigmoid(self.prob_out(z))[0]]
             ys = torch.cat((ys, outs[-1][-1].view(1, 1, self.odim)), dim=1)
