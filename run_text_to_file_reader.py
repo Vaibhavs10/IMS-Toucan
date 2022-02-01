@@ -18,7 +18,7 @@ tts_dict = {
     "fast_nancy"    : Nancy_FastSpeechInference,
 
     "trans_thorsten": Thorsten_TransformerTTSInference,
-    "trans_lj"      : LJSpeech_TransformerTTSInference,
+    "reformer_3x_trans_lj" : LJSpeech_TransformerTTSInference,
     "trans_libri"   : LibriTTS_TransformerTTSInference,
     "trans_nancy"   : Nancy_TransformerTTSInference
     }
@@ -51,14 +51,20 @@ def read_harvard_sentences(model_id, device):
     for index, sent in enumerate(sents):
         tts.read_to_file(text_list=[sent], file_location=output_dir + "/{}.wav".format(index))
 
+def read_prosody_test_sentences(model_id, device):
+    tts = tts_dict[model_id](device=device, speaker_embedding=None)
+
+    with open("Utility/prosodic_test_sentences.txt", "r", encoding="utf8") as f:
+        sents = f.read().split("\n")
+    output_dir = "audios/prosody_test_{}".format(model_id)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    for index, sent in enumerate(sents):
+        tts.read_to_file(text_list=[sent], file_location=output_dir + "/{}.wav".format(index))
 
 if __name__ == '__main__':
     exec_device = "cuda" if torch.cuda.is_available() else "cpu"
     if not os.path.isdir("audios"):
         os.makedirs("audios")
 
-    read_texts(model_id="trans_lj",
-               sentence=["Betty Botter bought some butter, but she said the butter's bitter."],
-               device=exec_device,
-               speaker_embedding=None,
-               filename="audios/trans_lj.wav")
+    read_prosody_test_sentences(model_id="reformer_3x_trans_lj")
