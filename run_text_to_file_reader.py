@@ -67,4 +67,4 @@ if __name__ == '__main__':
     if not os.path.isdir("audios"):
         os.makedirs("audios")
 
-    read_prosody_test_sentences(model_id="reformer_3x_trans_lj")
+    read_prosody_test_sentences(model_id="reformer_3x_trans_lj", device=exec_device)
