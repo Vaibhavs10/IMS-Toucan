@@ -65,9 +65,6 @@ def find_samples_with_highest_ctc(path_to_transcript_dict, path_to_aligner="alig
         if ctc_losses[index - 1] > threshold:
             print(f"{paths.pop(index - 1)} is potentially problematic")
 
-file_dict = build_path_to_transcript_dict_3xljspeech()
-find_samples_with_highest_ctc(file_dict)
-
 ####################################
 #      The rest is dependency      #
 ####################################
@@ -1005,3 +1002,6 @@ class AudioPreprocessor:
         if normalize:
             audio = self.normalize_audio(audio)
         return self.logmelfilterbank(audio=audio, sampling_rate=explicit_sampling_rate)
+
+file_dict = build_path_to_transcript_dict_3xljspeech()
+find_samples_with_highest_ctc(file_dict)
