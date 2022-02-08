@@ -27,7 +27,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
     if model_dir is not None:
         save_dir = model_dir
     else:
-        save_dir = os.path.join("Models", "Nystro_3x_lr_00005_b_10")
+        save_dir = os.path.join("Models", "N_V_128_lr_0015_b_16_bce_25_rf_2_3xlong_nf")
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     if not os.path.exists(save_dir):
@@ -38,8 +38,8 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
     train_set = TransformerTTSDataset(path_to_transcript_dict,
                                       cache_dir=cache_dir,
                                       lang="en",
-                                      min_len_in_seconds=1,
-                                      max_len_in_seconds=35,
+                                      min_len_in_seconds=15,
+                                      max_len_in_seconds=28,
                                       rebuild_cache=False)
 
     model = Transformer(idim=166, odim=80, spk_embed_dim=None)
@@ -49,12 +49,12 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir):
                train_dataset=train_set,
                device=device,
                save_directory=save_dir,
-               steps=300000,
-               batch_size=10,
+               steps=600000,
+               batch_size=16,
                epochs_per_save=10,
                use_speaker_embedding=False,
                lang="en",
-               lr=0.00005,
+               lr=0.0015,
                warmup_steps=8000,
                path_to_checkpoint=resume_checkpoint,
                fine_tune=finetune)

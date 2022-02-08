@@ -64,7 +64,7 @@ class Transformer(torch.nn.Module, ABC):
                  decoder_normalize_before=True,
                  encoder_concat_after=True,  # True is better according to https://github.com/soobinseo/Transformer-TTS
                  decoder_concat_after=True,  # True is better according to https://github.com/soobinseo/Transformer-TTS
-                 reduction_factor=1,
+                 reduction_factor=2,
                  spk_embed_dim=None,
                  spk_embed_integration_type="concat",
                  # training related
@@ -83,7 +83,7 @@ class Transformer(torch.nn.Module, ABC):
                  init_dec_alpha=1.0,
                  use_masking=False,  # either this or weighted masking, not both
                  use_weighted_masking=True,  # if there are severely different sized samples in one batch
-                 bce_pos_weight=7.0,  # scaling the loss of the stop token prediction
+                 bce_pos_weight=2.5,  # scaling the loss of the stop token prediction
                  loss_type="L1",
                  use_guided_attn_loss=True,
                  num_heads_applied_guided_attn=2,
