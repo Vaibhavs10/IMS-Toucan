@@ -98,7 +98,10 @@ class Transformer(torch.nn.Module, ABC):
     def forward(self, text, speaker_embedding=None, return_atts=False):
         self.eval()
         x = text
-        xs = x.unsqueeze(0)
+        if len(x.shape) == 1:
+            xs = x.unsqueeze(0)
+        else:
+            xs = x
         hs, _ = self.encoder(xs, None)
         if self.spk_embed_dim is not None:
             speaker_embeddings = speaker_embedding.unsqueeze(0)
