@@ -7,6 +7,7 @@ from TrainingInterfaces.TrainingPipelines.JointEmbeddingFunction import run as e
 from TrainingInterfaces.TrainingPipelines.PortaSpeech_IntegrationTest import run as ps_integration_test
 from TrainingInterfaces.TrainingPipelines.PortaSpeech_MetaCheckpoint import run as meta
 from TrainingInterfaces.TrainingPipelines.finetuning_example import run as fine_tuning_example
+from TrainingInterfaces.TrainingPipelines.PS_ft_lj import run as ps_ft_lj
 from TrainingInterfaces.TrainingPipelines.pretrain_aligner import run as aligner
 
 pipeline_dict = {
@@ -17,6 +18,7 @@ pipeline_dict = {
     "fine_ex"  : fine_tuning_example,
     "fs_it"    : fs_integration_test,
     "ps_it"    : ps_integration_test,
+    "ps_ft_lj" : ps_ft_lj,
 }
 
 if __name__ == '__main__':
@@ -55,7 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('--wandb',
                         action="store_true",
                         help="Whether to use weigths and biases to track training runs. Requires you to run wandb login and place your auth key before.",
-                        default=False)
+                        default=True)
 
     parser.add_argument('--wandb_resume_id',
                         type=str,
