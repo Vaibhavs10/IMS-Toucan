@@ -7,7 +7,7 @@ from TrainingInterfaces.TrainingPipelines.JointEmbeddingFunction import run as e
 from TrainingInterfaces.TrainingPipelines.PortaSpeech_IntegrationTest import run as ps_integration_test
 from TrainingInterfaces.TrainingPipelines.PortaSpeech_MetaCheckpoint import run as meta
 from TrainingInterfaces.TrainingPipelines.finetuning_example import run as fine_tuning_example
-from TrainingInterfaces.TrainingPipelines.PS_ft_lj import run as ps_ft_lj
+from TrainingInterfaces.TrainingPipelines.PS_ft_lj_flow import run as ps_ft_lj_flow
 from TrainingInterfaces.TrainingPipelines.pretrain_aligner import run as aligner
 
 pipeline_dict = {
@@ -18,7 +18,7 @@ pipeline_dict = {
     "fine_ex"  : fine_tuning_example,
     "fs_it"    : fs_integration_test,
     "ps_it"    : ps_integration_test,
-    "ps_ft_lj" : ps_ft_lj,
+    "ps_ft_lj" : ps_ft_lj_flow,
 }
 
 if __name__ == '__main__':

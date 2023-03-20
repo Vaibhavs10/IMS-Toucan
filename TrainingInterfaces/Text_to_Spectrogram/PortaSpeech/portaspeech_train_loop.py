@@ -16,6 +16,7 @@ from Utility.WarmupScheduler import ToucanWarmupScheduler as WarmupScheduler
 from Utility.utils import delete_old_checkpoints
 from Utility.utils import get_most_recent_checkpoint
 from Utility.utils import plot_progress_spec
+from Utility.wandb_utils import record_training_config
 
 
 def collate_and_pad(batch):
@@ -100,6 +101,7 @@ def train_loop(net,
             scheduler.load_state_dict(check_dict["scheduler"])
             step_counter = check_dict["step_counter"]
             grad_scaler.load_state_dict(check_dict["scaler"])
+    record_training_config(batch_size, lang, lr, warmup_steps, fine_tune, phase_1_steps, phase_2_steps)
     start_time = time.time()
     while True:
         net.train()
