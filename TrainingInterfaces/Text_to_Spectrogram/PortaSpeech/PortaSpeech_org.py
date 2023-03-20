@@ -202,24 +202,24 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                            LayerNorm(output_spectrogram_channels))
 
         # post net is realized as a flow
-        # gin_channels = attention_dimension
-        # self.post_flow = Glow(
-        #     in_channels=output_spectrogram_channels,
-        #     hidden_channels=192,  # post_glow_hidden  (original 192 in paper)
-        #     kernel_size=3,  # post_glow_kernel_size
-        #     dilation_rate=1,
-        #     n_blocks=16,  # post_glow_n_blocks (original 12 in paper)
-        #     n_layers=3,  # post_glow_n_block_layers (original 3 in paper)
-        #     n_split=4,
-        #     n_sqz=2,
-        #     gin_channels=gin_channels,
-        #     share_cond_layers=False,  # post_share_cond_layers
-        #     share_wn_layers=4,  # share_wn_layers
-        #     sigmoid_scale=False  # sigmoid_scale
-        # )
-        # self.prior_dist = dist.Normal(0, 1)
+        gin_channels = attention_dimension
+        self.post_flow = Glow(
+            in_channels=output_spectrogram_channels,
+            hidden_channels=192,  # post_glow_hidden  (original 192 in paper)
+            kernel_size=3,  # post_glow_kernel_size
+            dilation_rate=1,
+            n_blocks=16,  # post_glow_n_blocks (original 12 in paper)
+            n_layers=3,  # post_glow_n_block_layers (original 3 in paper)
+            n_split=4,
+            n_sqz=2,
+            gin_channels=gin_channels,
+            share_cond_layers=False,  # post_share_cond_layers
+            share_wn_layers=4,  # share_wn_layers
+            sigmoid_scale=False  # sigmoid_scale
+        )
+        self.prior_dist = dist.Normal(0, 1)
 
-        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
+        self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
 
         # initialize parameters
         self._reset_parameters(init_type=init_type, init_enc_alpha=init_enc_alpha, init_dec_alpha=init_dec_alpha)
@@ -309,7 +309,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                  alpha=1.0,
                  utterance_embedding=None,
                  lang_ids=None,
-                 run_glow=False):
+                 run_glow=True):
 
         if not self.multilingual_model:
             lang_ids = None
@@ -381,32 +381,32 @@ class PortaSpeech(torch.nn.Module, ABC):
         decoded_speech, _ = self.decoder(encoded_texts, decoder_masks, utterance_embedding)
         predicted_spectrogram_before_postnet = self.feat_out(decoded_speech).view(decoded_speech.size(0), -1, self.odim)
 
-        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
+        predicted_spectrogram_after_postnet = None
 
         # forward flow post-net
-        # if run_glow:
-        #     if utterance_embedding is not None:
-        #         before_enriched = _integrate_with_utt_embed(hs=predicted_spectrogram_before_postnet,
-        #                                                     utt_embeddings=utterance_embedding,
-        #                                                     projection=self.decoder_out_embedding_projection)
-        #     else:
-        #         before_enriched = predicted_spectrogram_before_postnet
+        if run_glow:
+            if utterance_embedding is not None:
+                before_enriched = _integrate_with_utt_embed(hs=predicted_spectrogram_before_postnet,
+                                                            utt_embeddings=utterance_embedding,
+                                                            projection=self.decoder_out_embedding_projection)
+            else:
+                before_enriched = predicted_spectrogram_before_postnet
 
-        #     if is_inference:
-        #         predicted_spectrogram_after_postnet = self.run_post_glow(tgt_mels=None,
-        #                                                                  infer=is_inference,
-        #                                                                  mel_out=before_enriched,
-        #                                                                  encoded_texts=encoded_texts,
-        #                                                                  tgt_nonpadding=None)
-        #     else:
-        #         glow_loss = self.run_post_glow(tgt_mels=gold_speech,
-        #                                        infer=is_inference,
-        #                                        mel_out=before_enriched,
-        #                                        encoded_texts=encoded_texts,
-        #                                        tgt_nonpadding=speech_nonpadding_mask.transpose(1, 2))
-        # else:
-        #     glow_loss = None
-        glow_loss = None
+            if is_inference:
+                predicted_spectrogram_after_postnet = self.run_post_glow(tgt_mels=None,
+                                                                         infer=is_inference,
+                                                                         mel_out=before_enriched,
+                                                                         encoded_texts=encoded_texts,
+                                                                         tgt_nonpadding=None)
+            else:
+                glow_loss = self.run_post_glow(tgt_mels=gold_speech,
+                                               infer=is_inference,
+                                               mel_out=before_enriched,
+                                               encoded_texts=encoded_texts,
+                                               tgt_nonpadding=speech_nonpadding_mask.transpose(1, 2))
+        else:
+            glow_loss = None
+
         if not is_inference:
             return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions, glow_loss
         else:
@@ -422,7 +422,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                   utterance_embedding=None,
                   return_duration_pitch_energy=False,
                   lang_id=None,
-                  run_postflow=False):
+                  run_postflow=True):
         """
         Generate the sequence of features given the sequences of characters.
 
