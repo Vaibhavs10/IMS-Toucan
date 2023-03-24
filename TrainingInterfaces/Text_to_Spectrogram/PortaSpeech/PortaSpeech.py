@@ -200,7 +200,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                           LayerNorm(attention_dimension))
         self.decoder_out_embedding_projection = Sequential(Linear(output_spectrogram_channels + utt_embed_dim,
                                                                   output_spectrogram_channels),
-        #                                                    LayerNorm(output_spectrogram_channels))
+                                                          LayerNorm(output_spectrogram_channels))
         # # define postnet
         # self.postnet = PostNet(idim=idim, odim=odim, n_layers=postnet_layers, n_chans=postnet_chans,
         #                        n_filts=postnet_filts, use_batch_norm=use_batch_norm,
@@ -289,7 +289,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                                   run_glow=run_glow)
 
         # calculate loss
-        l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(after_outs=None,
+        l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(after_outs=after_outs,
                                                                          # if a regular postnet is used, the post-postnet outs have to go here. The flow has its own loss though, so we hard-code this to None
                                                                          before_outs=before_outs,
                                                                          d_outs=d_outs, p_outs=p_outs,
