@@ -124,7 +124,7 @@ def train_loop(net,
                     style_embedding = style_embedding_function(batch_of_spectrograms=batch[2].to(device),
                                                                batch_of_spectrogram_lengths=batch[3].to(device))
 
-                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss = net(
+                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, generator_loss, discriminator_loss = net(
                         text_tensors=batch[0].to(device),
                         text_lengths=batch[1].to(device),
                         gold_speech=batch[2].to(device),
@@ -147,6 +147,10 @@ def train_loop(net,
                         train_loss = train_loss + pitch_loss
                     if not torch.isnan(energy_loss):
                         train_loss = train_loss + energy_loss
+                    if not torch.isnan(generator_loss):
+                        train_loss = train_loss + generator_loss
+                    if not torch.isnan(discriminator_loss):
+                        train_loss = train_loss + discriminator_loss
 
                 else:
                     # ======================================================
@@ -158,7 +162,7 @@ def train_loop(net,
                         batch_of_spectrogram_lengths=batch[3].to(device),
                         return_all_outs=True)
 
-                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, output_spectrograms = net(
+                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, output_spectrograms, generator_loss, discriminator_loss = net(
                         text_tensors=batch[0].to(device),
                         text_lengths=batch[1].to(device),
                         gold_speech=batch[2].to(device),
@@ -181,6 +185,10 @@ def train_loop(net,
                         train_loss = train_loss + pitch_loss
                     if not torch.isnan(energy_loss):
                         train_loss = train_loss + energy_loss
+                    if not torch.isnan(generator_loss):
+                        train_loss = train_loss + generator_loss
+                    if not torch.isnan(discriminator_loss):
+                        train_loss = train_loss + discriminator_loss                                                
 
                     style_embedding_function.train()
                     style_embedding_of_predicted, out_list_predicted = style_embedding_function(

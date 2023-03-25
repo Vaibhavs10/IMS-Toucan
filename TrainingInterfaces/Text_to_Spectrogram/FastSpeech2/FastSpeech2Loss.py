@@ -35,8 +35,9 @@ class FastSpeech2Loss(torch.nn.Module):
         self.l1_criterion = torch.nn.L1Loss(reduction=reduction)
         self.mse_criterion = torch.nn.MSELoss(reduction=reduction)
         self.duration_criterion = DurationPredictorLoss(reduction=reduction)
+        self.discriminator_criterion = torch.nn.BCEWithLogitsLoss(reduction=reduction)
 
-    def forward(self, after_outs, before_outs, d_outs, p_outs, e_outs, ys,
+    def forward(self, after_outs, before_outs, discriminator_output, d_outs, p_outs, e_outs, ys,
                 ds, ps, es, ilens, olens, ):
         """
         Args:
@@ -77,11 +78,13 @@ class FastSpeech2Loss(torch.nn.Module):
 
         # calculate loss
         l1_loss = self.l1_criterion(before_outs, ys)
-        if after_outs is not None:
-            l1_loss = l1_loss + self.l1_criterion(after_outs, ys)
+        # if after_outs is not None:
+        #     l1_loss = l1_loss + self.l1_criterion(after_outs, ys)
         duration_loss = self.duration_criterion(d_outs, ds)
         pitch_loss = self.mse_criterion(p_outs, ps)
         energy_loss = self.mse_criterion(e_outs, es)
+        discriminator_loss = self.discriminator_criterion(discriminator_output, ys)
+        generator_loss = self.mse_criterion(after_outs, ys) + discriminator_loss
 
         # make weighted mask and apply it
         if self.use_weighted_masking:
@@ -103,5 +106,7 @@ class FastSpeech2Loss(torch.nn.Module):
             pitch_weights = duration_weights.unsqueeze(-1)
             pitch_loss = pitch_loss.mul(pitch_weights).masked_select(pitch_masks).sum()
             energy_loss = (energy_loss.mul(pitch_weights).masked_select(pitch_masks).sum())
+            discriminator_loss = discriminator_loss.mul(out_weights).masked_select(out_masks).sum()
+            generator_loss = generator_loss.mul(out_weights).masked_select(out_masks).sum()
 
-        return l1_loss, duration_loss, pitch_loss, energy_loss
+        return l1_loss, duration_loss, pitch_loss, energy_loss, discriminator_loss, generator_loss

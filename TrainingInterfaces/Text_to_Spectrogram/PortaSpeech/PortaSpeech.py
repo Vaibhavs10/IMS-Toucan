@@ -12,6 +12,8 @@ from Layers.DurationPredictor import DurationPredictor
 from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
 from Layers.PostNet import PostNet
+from Layers.CNNDiscriminatorNet import CNNDiscriminatorNet
+from Layers.CNNGeneratorNet import CNNGeneratorNet
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
@@ -206,7 +208,10 @@ class PortaSpeech(torch.nn.Module, ABC):
         #                        n_filts=postnet_filts, use_batch_norm=use_batch_norm,
         #                        dropout_rate=postnet_dropout_rate)
         # define postnet
-        self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+        self.generator = CNNGeneratorNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+                               n_filts=5, use_batch_norm=True,
+                               dropout_rate=0.5)
+        self.discriminator  = CNNDiscriminatorNet(idim=output_spectrogram_channels, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
                                n_filts=5, use_batch_norm=True,
                                dropout_rate=0.5)                               
         # post net is realized as a flow
@@ -273,6 +278,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         # forward propagation
         before_outs, \
         after_outs, \
+        discriminator_output, \
         d_outs, \
         p_outs, \
         e_outs, \
@@ -289,9 +295,10 @@ class PortaSpeech(torch.nn.Module, ABC):
                                   run_glow=run_glow)
 
         # calculate loss
-        l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(after_outs=after_outs,
+        l1_loss, duration_loss, pitch_loss, energy_loss, discriminator_loss, generator_loss = self.criterion(after_outs=after_outs,
                                                                          # if a regular postnet is used, the post-postnet outs have to go here. The flow has its own loss though, so we hard-code this to None
                                                                          before_outs=before_outs,
+                                                                         discriminator_output = discriminator_output,
                                                                          d_outs=d_outs, p_outs=p_outs,
                                                                          e_outs=e_outs, ys=gold_speech,
                                                                          ds=gold_durations, ps=gold_pitch,
@@ -302,8 +309,8 @@ class PortaSpeech(torch.nn.Module, ABC):
         if return_mels:
             if after_outs is None:
                 after_outs = before_outs
-            return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, after_outs
-        return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss
+            return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, after_outs, generator_loss, discriminator_loss
+        return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, generator_loss, discriminator_loss
 
     def _forward(self,
                  text_tensors,
@@ -392,8 +399,8 @@ class PortaSpeech(torch.nn.Module, ABC):
         # # postnet -> (B, Lmax//r * r, odim)
         # after_outs = before_outs + self.postnet(before_outs.transpose(1, 2)).transpose(1, 2)
 
-        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet + self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2)).transpose(1, 2)
-
+        predicted_spectrogram_after_cnngeneratornet = predicted_spectrogram_before_postnet + self.generator(predicted_spectrogram_before_postnet.transpose(1, 2)).transpose(1, 2)
+        discriminator_output = self.discriminator(predicted_spectrogram_after_cnngeneratornet.transpose(1, 2)).transpose(1, 2)
         # forward flow post-net
         # if run_glow:
         #     if utterance_embedding is not None:
@@ -419,9 +426,9 @@ class PortaSpeech(torch.nn.Module, ABC):
         #     glow_loss = None
         glow_loss = None
         if not is_inference:
-            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions, glow_loss
+            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_cnngeneratornet, discriminator_output, predicted_durations, pitch_predictions, energy_predictions, glow_loss
         else:
-            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
+            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_cnngeneratornet, predicted_durations, pitch_predictions, energy_predictions
 
     def inference(self,
                   text,
