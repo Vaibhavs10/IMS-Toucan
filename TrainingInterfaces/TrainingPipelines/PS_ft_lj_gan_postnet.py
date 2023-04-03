@@ -66,7 +66,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
                lr=0.001,
                warmup_steps=4000,
                # DOWNLOAD THESE INITIALIZATION MODELS FROM THE RELEASE PAGE OF THE GITHUB OR RUN THE DOWNLOADER SCRIPT TO GET THEM AUTOMATICALLY
-               path_to_checkpoint=os.path.join(MODELS_DIR, "PortaSpeech_Meta",
+               path_to_checkpoint=os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_No_0_00075_scratch",
                                                "best.pt") if resume_checkpoint is None else resume_checkpoint,
                path_to_embed_model=os.path.join(MODELS_DIR, "Embedding", "embedding_function.pt"),
                fine_tune=True if resume_checkpoint is None else finetune,
