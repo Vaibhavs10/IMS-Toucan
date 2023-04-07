@@ -114,6 +114,10 @@ def train_loop(net,
         pitch_losses_total = list()
         energy_losses_total = list()
         glow_losses_total = list()
+        discriminator_losses_total = list()
+        adverserial_losses_total = list()
+        feature_matching_losses_total = list()
+
         for batch in tqdm(train_loader):
             train_loss = 0.0
             with autocast():
@@ -147,8 +151,12 @@ def train_loop(net,
                         train_loss = train_loss + pitch_loss
                     if not torch.isnan(energy_loss):
                         train_loss = train_loss + energy_loss
-                    
-                    train_loss = train_loss + discriminator_loss + 0.2 * adverserial_loss + 2 * feature_matching_loss
+                    if not torch.isnan(discriminator_loss):
+                        train_loss = train_loss + discriminator_loss
+                    if not torch.isnan(adverserial_loss):
+                        train_loss = train_loss + 0.2 * adverserial_loss
+                    if not torch.isnan(feature_matching_loss):
+                        train_loss = train_loss + 2 * feature_matching_loss  
 
                 else:
                     # ======================================================
@@ -209,6 +217,9 @@ def train_loop(net,
                 duration_losses_total.append(duration_loss.item())
                 pitch_losses_total.append(pitch_loss.item())
                 energy_losses_total.append(energy_loss.item())
+                discriminator_losses_total.append(discriminator_loss.item())
+                adverserial_losses_total.append(adverserial_loss.item())
+                feature_matching_losses_total.append(feature_matching_loss.item())
 
             if glow_loss is not None:
                 if step_counter > postnet_start_steps and not torch.isnan(glow_loss):
@@ -277,6 +288,9 @@ def train_loop(net,
                     glow_losses_total) != 0 else None,
                 "cycle_loss":    sum(cycle_losses_this_epoch) / len(cycle_losses_this_epoch) if len(
                     cycle_losses_this_epoch) != 0 else None,
+                "discriminator_loss": round(sum(discriminator_losses_total) / len(discriminator_losses_total), 3),
+                "adverserial_loss": round(sum(adverserial_losses_total) / len(adverserial_losses_total), 3),
+                "feature_matching_loss": round(sum(feature_matching_losses_total) / len(feature_matching_losses_total), 3),
                 "Steps":         step_counter,
             })
         if step_counter > steps:
