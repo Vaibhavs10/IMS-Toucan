@@ -131,8 +131,8 @@ class GaussianDiffusion(nn.Module):
         super().__init__()
 
         out_dims = out_dims
-        # always WN
-        denoise_fn = DIFF_DECODERS[hparams['diff_decoder_type']](hparams)
+        # always DiffNet - Put the parameters in here
+        denoise_fn = DiffNet()
         timesteps = timesteps
         K_step = K_step
         loss_type = loss_type
@@ -182,9 +182,9 @@ class GaussianDiffusion(nn.Module):
             betas * np.sqrt(alphas_cumprod_prev) / (1. - alphas_cumprod)))
         self.register_buffer('posterior_mean_coef2', to_torch(
             (1. - alphas_cumprod_prev) * np.sqrt(alphas) / (1. - alphas_cumprod)))
-
-        self.register_buffer('spec_min', torch.FloatTensor(spec_min)[None, None, :hparams['keep_bins']])
-        self.register_buffer('spec_max', torch.FloatTensor(spec_max)[None, None, :hparams['keep_bins']])
+        # VB: set this to 80, according to DiffSpeech config
+        self.register_buffer('spec_min', torch.FloatTensor(spec_min)[None, None, :80])
+        self.register_buffer('spec_max', torch.FloatTensor(spec_max)[None, None, :80])
 
     def q_mean_variance(self, x_start, t):
         mean = extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
@@ -277,10 +277,12 @@ class GaussianDiffusion(nn.Module):
             fs2_mels = fs2_mels.transpose(1, 2)[:, None, :, :]
 
             x = self.q_sample(x_start=fs2_mels, t=torch.tensor([t - 1], device=device).long())
-            if self.hparams.get('gaussian_start') is not None and self.hparams['gaussian_start']:
-                print('===> gaussian start.')
-                shape = (cond.shape[0], 1, self.mel_bins, cond.shape[2])
-                x = torch.randn(shape, device=device)
+            
+            # VB: commented this out as this key was nowhere to be found in the codebase.
+            # if self.hparams.get('gaussian_start') is not None and self.hparams['gaussian_start']:
+            #     print('===> gaussian start.')
+            #     shape = (cond.shape[0], 1, self.mel_bins, cond.shape[2])
+            #     x = torch.randn(shape, device=device)
             for i in tqdm(reversed(range(0, t)), desc='sample time step', total=t):
                 x = self.p_sample(x, torch.full((b,), i, device=device, dtype=torch.long), cond)
             x = x[:, 0].transpose(1, 2)

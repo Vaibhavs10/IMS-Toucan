@@ -1,5 +1,3 @@
-#To-Do: remove the dependency on hparams
-
 import math
 
 import torch
@@ -62,9 +60,9 @@ class ResidualBlock(nn.Module):
 
 
 class DiffNet(nn.Module):
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
-        in_dims = hparams['audio_num_mel_bins']
+        in_dims = 80
         self.encoder_hidden = 256
         self.residual_layers = 20
         self.residual_channels = 256
