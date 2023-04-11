@@ -15,6 +15,7 @@ from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
 from diffusion_utils.shallow_diffusion_tts import GaussianDiffusion
+import diffusion_utils.spec_details
 from Utility.utils import initialize
 from Utility.utils import make_non_pad_mask
 from Utility.utils import make_pad_mask
@@ -202,7 +203,15 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
-        self.diffusion_spectrogram_denoiser = GaussianDiffusion()
+        self.diffusion_spectrogram_denoiser = GaussianDiffusion(
+            out_dims=80,
+            timesteps=100,
+            K_steps=71,
+            loss_type="l1",
+            spec_min=spec_min,
+            spec_max=spec_max,
+            schedule_type="linear", 
+            out_dims=None,)
         # post net is realized as a flow
         # gin_channels = attention_dimension
         # self.post_flow = Glow(
