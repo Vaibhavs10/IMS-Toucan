@@ -65,10 +65,10 @@ class DiffNet(nn.Module):
     def __init__(self, hparams):
         super().__init__()
         in_dims = hparams['audio_num_mel_bins']
-        self.encoder_hidden = hparams['hidden_size']
-        self.residual_layers = hparams['residual_layers']
-        self.residual_channels = hparams['residual_channels']
-        self.dilation_cycle_length = hparams['dilation_cycle_length']
+        self.encoder_hidden = 256
+        self.residual_layers = 20
+        self.residual_channels = 256
+        self.dilation_cycle_length = 1
 
         self.input_projection = Conv1d(in_dims, self.residual_channels, 1)
         self.diffusion_embedding = SinusoidalPosEmb(self.residual_channels)

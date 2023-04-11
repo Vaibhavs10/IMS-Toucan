@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch import nn
 from tqdm import tqdm
 
-from modules.tts.fs2_orig import FastSpeech2Orig
+# from modules.tts.fs2_orig import FastSpeech2Orig
 from diffusion_utils.net import DiffNet
 
 #from modules.tts.commons.align_ops import expand_states //directly copying this below
@@ -79,62 +79,74 @@ DIFF_DECODERS = {
 
 # VB: This would effectively just be a forward pass on NoPostNet PortaSpeech
 # VB: this returns 3 things - decoder input, decoder output i.e. mel and another random noise vector (need to double check this)
-class AuxModel(FastSpeech2Orig):
-    def forward(self, txt_tokens, mel2ph=None, spk_embed=None, spk_id=None,
-                f0=None, uv=None, energy=None, infer=False, **kwargs):
-        ret = {}
-        encoder_out = self.encoder(txt_tokens)  # [B, T, C]
-        src_nonpadding = (txt_tokens > 0).float()[:, :, None]
-        style_embed = self.forward_style_embed(spk_embed, spk_id)
+# class AuxModel(FastSpeech2Orig):
+#     def forward(self, txt_tokens, mel2ph=None, spk_embed=None, spk_id=None,
+#                 f0=None, uv=None, energy=None, infer=False, **kwargs):
+#         ret = {}
+#         encoder_out = self.encoder(txt_tokens)  # [B, T, C]
+#         src_nonpadding = (txt_tokens > 0).float()[:, :, None]
+#         style_embed = self.forward_style_embed(spk_embed, spk_id)
 
-        # add dur
-        dur_inp = (encoder_out + style_embed) * src_nonpadding
-        mel2ph = self.forward_dur(dur_inp, mel2ph, txt_tokens, ret)
-        tgt_nonpadding = (mel2ph > 0).float()[:, :, None]
-        decoder_inp = decoder_inp_ = expand_states(encoder_out, mel2ph)
+#         # add dur
+#         dur_inp = (encoder_out + style_embed) * src_nonpadding
+#         mel2ph = self.forward_dur(dur_inp, mel2ph, txt_tokens, ret)
+#         tgt_nonpadding = (mel2ph > 0).float()[:, :, None]
+#         decoder_inp = decoder_inp_ = expand_states(encoder_out, mel2ph)
 
-        # add pitch and energy embed
-        if self.hparams['use_pitch_embed']:
-            pitch_inp = (decoder_inp_ + style_embed) * tgt_nonpadding
-            decoder_inp = decoder_inp + self.forward_pitch(pitch_inp, f0, uv, mel2ph, ret, encoder_out)
+#         # add pitch and energy embed
+#         if self.hparams['use_pitch_embed']:
+#             pitch_inp = (decoder_inp_ + style_embed) * tgt_nonpadding
+#             decoder_inp = decoder_inp + self.forward_pitch(pitch_inp, f0, uv, mel2ph, ret, encoder_out)
 
-        # add pitch and energy embed
-        if self.hparams['use_energy_embed']:
-            energy_inp = (decoder_inp_ + style_embed) * tgt_nonpadding
-            decoder_inp = decoder_inp + self.forward_energy(energy_inp, energy, ret)
+#         # add pitch and energy embed
+#         if self.hparams['use_energy_embed']:
+#             energy_inp = (decoder_inp_ + style_embed) * tgt_nonpadding
+#             decoder_inp = decoder_inp + self.forward_energy(energy_inp, energy, ret)
 
-        # decoder input
-        ret['decoder_inp'] = decoder_inp = (decoder_inp + style_embed) * tgt_nonpadding
-        if self.hparams['dec_inp_add_noise']:
-            B, T, _ = decoder_inp.shape
-            z = kwargs.get('adv_z', torch.randn([B, T, self.z_channels])).to(decoder_inp.device)
-            ret['adv_z'] = z
-            decoder_inp = torch.cat([decoder_inp, z], -1)
-            decoder_inp = self.dec_inp_noise_proj(decoder_inp) * tgt_nonpadding
-        if kwargs['skip_decoder']:
-            return ret
-        ret['mel_out'] = self.forward_decoder(decoder_inp, tgt_nonpadding, ret, infer=infer, **kwargs)
-        return ret
+#         # decoder input
+#         ret['decoder_inp'] = decoder_inp = (decoder_inp + style_embed) * tgt_nonpadding
+#         if self.hparams['dec_inp_add_noise']:
+#             B, T, _ = decoder_inp.shape
+#             z = kwargs.get('adv_z', torch.randn([B, T, self.z_channels])).to(decoder_inp.device)
+#             ret['adv_z'] = z
+#             decoder_inp = torch.cat([decoder_inp, z], -1)
+#             decoder_inp = self.dec_inp_noise_proj(decoder_inp) * tgt_nonpadding
+#         if kwargs['skip_decoder']:
+#             return ret
+#         ret['mel_out'] = self.forward_decoder(decoder_inp, tgt_nonpadding, ret, infer=infer, **kwargs)
+#         return ret
 
 
 class GaussianDiffusion(nn.Module):
-    def __init__(self, dict_size, hparams, out_dims=None):
+    def __init__(self, 
+                out_dims=80,
+                timesteps=100,
+                K_steps=71,
+                loss_type="l1",
+                spec_min,
+                spec_max,
+                schedule_type="linear", 
+                out_dims=None,
+                ret):
         super().__init__()
-        self.hparams = hparams
-        out_dims = hparams['audio_num_mel_bins']
+
+        out_dims = out_dims
+        # always WN
         denoise_fn = DIFF_DECODERS[hparams['diff_decoder_type']](hparams)
-        timesteps = hparams['timesteps']
-        K_step = hparams['K_step']
-        loss_type = hparams['diff_loss_type']
-        spec_min = hparams['spec_min']
-        spec_max = hparams['spec_max']
+        timesteps = timesteps
+        K_step = K_step
+        loss_type = loss_type
+        spec_min = spec_min
+        spec_max = spec_max
+        schedule_type = "linear"
 
         self.denoise_fn = denoise_fn
-        self.fs2 = AuxModel(dict_size, hparams)
+        # Replace fs2 here
+        # self.fs2 = AuxModel(dict_size, hparams)
         self.mel_bins = out_dims
-
-        if hparams['schedule_type'] == 'linear':
-            betas = linear_beta_schedule(timesteps, hparams['max_beta'])
+        # Defaults to linear & max_beta to 0.06
+        if schedule_type == 'linear':
+            betas = linear_beta_schedule(timesteps, 0.06)
         else:
             betas = cosine_beta_schedule(timesteps)
 
@@ -244,8 +256,8 @@ class GaussianDiffusion(nn.Module):
     def forward(self, txt_tokens, mel2ph=None, spk_embed=None, spk_id=None,
                 ref_mels=None, f0=None, uv=None, energy=None, infer=False, **kwargs):
         b, *_, device = *txt_tokens.shape, txt_tokens.device
-        ret = self.fs2(txt_tokens, mel2ph=mel2ph, spk_embed=spk_embed, spk_id=spk_id,
-                                f0=f0, uv=uv, energy=energy, infer=infer, skip_decoder=(not infer), **kwargs)
+        # ret = self.fs2(txt_tokens, mel2ph=mel2ph, spk_embed=spk_embed, spk_id=spk_id,
+        #                         f0=f0, uv=uv, energy=energy, infer=infer, skip_decoder=(not infer), **kwargs)
         cond = ret['decoder_inp'].transpose(1, 2)
 
         if not infer:
@@ -282,8 +294,9 @@ class GaussianDiffusion(nn.Module):
     def denorm_spec(self, x):
         return (x + 1) / 2 * (self.spec_max - self.spec_min) + self.spec_min
 
-    def cwt2f0_norm(self, cwt_spec, mean, std, mel2ph):
-        return self.fs2.cwt2f0_norm(cwt_spec, mean, std, mel2ph)
+    # VB: might have to uncomment this out
+    # def cwt2f0_norm(self, cwt_spec, mean, std, mel2ph):
+    #     return self.fs2.cwt2f0_norm(cwt_spec, mean, std, mel2ph)
 
     def out2mel(self, x):
         return x
