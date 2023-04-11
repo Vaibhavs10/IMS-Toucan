@@ -128,5 +128,5 @@ def the_raven(version, model_id="Meta", exec_device="cpu"):
 if __name__ == '__main__':
     exec_device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"running on {exec_device}")
-
-    le_corbeau_et_le_renard(version="NEB_baseline", model_id="NEB", exec_device=exec_device)
+    # le_corbeau_et_le_renard(version="NEB_baseline", model_id="NEB", exec_device=exec_device)
+    read_harvard_sentences(model_id="LJSpeech_GAN_0_001", device="cuda:5")

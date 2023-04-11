@@ -178,24 +178,24 @@ class PortaSpeech(torch.nn.Module):
                                                            LayerNorm(output_spectrogram_channels))
 
         # post net is realized as a flow
-        gin_channels = attention_dimension
-        self.post_flow = Glow(
-            output_spectrogram_channels,
-            192,  # post_glow_hidden  (original 192 in paper)
-            3,  # post_glow_kernel_size
-            1,
-            16,  # post_glow_n_blocks
-            3,  # post_glow_n_block_layers
-            n_split=4,
-            n_sqz=2,
-            gin_channels=gin_channels,
-            share_cond_layers=False,  # post_share_cond_layers
-            share_wn_layers=4,  # share_wn_layers
-            sigmoid_scale=False  # sigmoid_scale
-        )
-        self.prior_dist = dist.Normal(0, 1)
+        # gin_channels = attention_dimension
+        # self.post_flow = Glow(
+        #     output_spectrogram_channels,
+        #     192,  # post_glow_hidden  (original 192 in paper)
+        #     3,  # post_glow_kernel_size
+        #     1,
+        #     16,  # post_glow_n_blocks
+        #     3,  # post_glow_n_block_layers
+        #     n_split=4,
+        #     n_sqz=2,
+        #     gin_channels=gin_channels,
+        #     share_cond_layers=False,  # post_share_cond_layers
+        #     share_wn_layers=4,  # share_wn_layers
+        #     sigmoid_scale=False  # sigmoid_scale
+        # )
+        # self.prior_dist = dist.Normal(0, 1)
 
-        self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
+        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
 
         self.load_state_dict(weights)
         self.eval()
@@ -286,15 +286,13 @@ class PortaSpeech(torch.nn.Module):
         predicted_spectrogram_before_postnet = self.feat_out(decoded_speech).view(decoded_speech.size(0), -1, self.odim)
 
         # forward flow post-net
-        if utterance_embedding is not None:
-            before_enriched = _integrate_with_utt_embed(hs=predicted_spectrogram_before_postnet,
-                                                        utt_embeddings=utterance_embedding,
-                                                        projection=self.decoder_out_embedding_projection)
-        else:
-            before_enriched = predicted_spectrogram_before_postnet
-        predicted_spectrogram_after_postnet = self.run_post_glow(mel_out=before_enriched,
-                                                                 encoded_texts=encoded_texts,
-                                                                 device=device)
+        # if utterance_embedding is not None:
+        #     before_enriched = _integrate_with_utt_embed(hs=predicted_spectrogram_before_postnet,
+        #                                                 utt_embeddings=utterance_embedding,
+        #                                                 projection=self.decoder_out_embedding_projection)
+        # else:
+        #     before_enriched = predicted_spectrogram_before_postnet
+        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
 
         return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
 
