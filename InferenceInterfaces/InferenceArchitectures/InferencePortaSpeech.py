@@ -8,6 +8,7 @@ from Layers.Conformer import Conformer
 from Layers.DurationPredictor import DurationPredictor
 from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
+from Layers.PostNet import PostNet
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
 from Utility.utils import make_non_pad_mask
@@ -177,25 +178,28 @@ class PortaSpeech(torch.nn.Module):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
+        self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+                               n_filts=5, use_batch_norm=True,
+                               dropout_rate=0.5)                               
         # post net is realized as a flow
-        gin_channels = attention_dimension
-        self.post_flow = Glow(
-            output_spectrogram_channels,
-            192,  # post_glow_hidden  (original 192 in paper)
-            3,  # post_glow_kernel_size
-            1,
-            16,  # post_glow_n_blocks
-            3,  # post_glow_n_block_layers
-            n_split=4,
-            n_sqz=2,
-            gin_channels=gin_channels,
-            share_cond_layers=False,  # post_share_cond_layers
-            share_wn_layers=4,  # share_wn_layers
-            sigmoid_scale=False  # sigmoid_scale
-        )
-        self.prior_dist = dist.Normal(0, 1)
+        # gin_channels = attention_dimension
+        # self.post_flow = Glow(
+        #     output_spectrogram_channels,
+        #     192,  # post_glow_hidden  (original 192 in paper)
+        #     3,  # post_glow_kernel_size
+        #     1,
+        #     16,  # post_glow_n_blocks
+        #     3,  # post_glow_n_block_layers
+        #     n_split=4,
+        #     n_sqz=2,
+        #     gin_channels=gin_channels,
+        #     share_cond_layers=False,  # post_share_cond_layers
+        #     share_wn_layers=4,  # share_wn_layers
+        #     sigmoid_scale=False  # sigmoid_scale
+        # )
+        # self.prior_dist = dist.Normal(0, 1)
 
-        self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
+        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
 
         self.load_state_dict(weights)
         self.eval()
@@ -292,9 +296,10 @@ class PortaSpeech(torch.nn.Module):
                                                         projection=self.decoder_out_embedding_projection)
         else:
             before_enriched = predicted_spectrogram_before_postnet
-        predicted_spectrogram_after_postnet = self.run_post_glow(mel_out=before_enriched,
-                                                                 encoded_texts=encoded_texts,
-                                                                 device=device)
+        # predicted_spectrogram_after_postnet = self.run_post_glow(mel_out=before_enriched,
+        #                                                          encoded_texts=encoded_texts,
+        #                                                          device=device)
+        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet + self.postnet(before_enriched.transpose(1, 2)).transpose(1, 2)
 
         return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
 

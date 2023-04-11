@@ -146,5 +146,13 @@ def show_all_models_params():
     print("Number of (trainable) Parameters in PortaSpeech: {}".format(count_parameters(PortaSpeech())))
 
 
+def avg_and_save_tts_model(model_dir):
+     checkpoint_paths = get_n_recent_checkpoints_paths(checkpoint_dir=model_dir, n=1)
+     averaged_model, default_embed = average_checkpoints(checkpoint_paths, load_func=load_net_porta)
+     save_model_for_use(model=averaged_model, default_embed=default_embed, name=os.path.join(MODELS_DIR, model_dir, "best.pt"))
+     print("model saved")
+
 if __name__ == '__main__':
-    make_best_in_all()
+    # make_best_in_all()
+    model_dir = "/mount/arbeitsdaten56/projekte/synthesis/srivasvv/thesis-playground/tts-postnet-eval/IMS-Toucan/Models/PortaSpeech_LJSpeech_CNN_0_0005"
+    avg_and_save_tts_model(model_dir)
