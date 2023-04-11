@@ -154,7 +154,7 @@ def train_loop(net,
                     if not torch.isnan(discriminator_loss):
                         train_loss = train_loss + discriminator_loss
                     if not torch.isnan(adverserial_loss):
-                        train_loss = train_loss + 0.2 * adverserial_loss
+                        train_loss = train_loss + 0.75 * adverserial_loss
                     if not torch.isnan(feature_matching_loss):
                         train_loss = train_loss + 2 * feature_matching_loss  
 
@@ -194,7 +194,7 @@ def train_loop(net,
                     if not torch.isnan(discriminator_loss):
                         train_loss = train_loss + discriminator_loss
                     if not torch.isnan(adverserial_loss):
-                        train_loss = train_loss + 0.2 * adverserial_loss
+                        train_loss = train_loss + 0.75 * adverserial_loss
                     if not torch.isnan(feature_matching_loss):
                         train_loss = train_loss + 2 * feature_matching_loss                                                                      
 
