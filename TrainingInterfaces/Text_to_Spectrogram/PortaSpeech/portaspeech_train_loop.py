@@ -1,5 +1,6 @@
 import os
 import time
+import random
 
 import torch
 import torch.multiprocessing
@@ -12,7 +13,7 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 
 from TrainingInterfaces.Spectrogram_to_Embedding.StyleEmbedding import StyleEmbedding
-from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech import SpectrogramDiscriminator
+from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.SpectrogramDiscriminator import SpectrogramDiscriminator
 from Utility.WarmupScheduler import ToucanWarmupScheduler as WarmupScheduler
 from Utility.utils import delete_old_checkpoints
 from Utility.utils import get_most_recent_checkpoint
@@ -88,6 +89,7 @@ def train_loop(net,
                               prefetch_factor=8,
                               collate_fn=collate_and_pad,
                               persistent_workers=True)
+
     step_counter = 0
     optimizer = torch.optim.Adam(list(net.parameters()) + list(discriminator.parameters()), lr=lr)
     scheduler = WarmupScheduler(optimizer, peak_lr=lr, warmup_steps=warmup_steps,
@@ -130,7 +132,7 @@ def train_loop(net,
                     style_embedding = style_embedding_function(batch_of_spectrograms=batch[2].to(device),
                                                                batch_of_spectrogram_lengths=batch[3].to(device))
 
-                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss = net(
+                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, output_spectrograms = net(
                         text_tensors=batch[0].to(device),
                         text_lengths=batch[1].to(device),
                         gold_speech=batch[2].to(device),
@@ -142,7 +144,7 @@ def train_loop(net,
                         # mind the switched order
                         utterance_embedding=style_embedding,
                         lang_ids=batch[8].to(device),
-                        return_mels=False,
+                        return_mels=True,
                         run_glow=step_counter > postnet_start_steps or fine_tune)
 
                     if not torch.isnan(l1_loss):
@@ -160,7 +162,7 @@ def train_loop(net,
                     # if not torch.isnan(feature_matching_loss):
                     #     train_loss = train_loss + 2 * feature_matching_loss
                     discriminator_loss, generator_loss = calc_gan_outputs(real_spectrograms=batch[2].to(device),
-                                                                      fake_spectrograms=generated_spectrograms,
+                                                                      fake_spectrograms=output_spectrograms,
                                                                       spectrogram_lengths=batch[3].to(device),
                                                                       discriminator=discriminator)
                     if not torch.isnan(discriminator_loss):
@@ -211,7 +213,7 @@ def train_loop(net,
                     # if not torch.isnan(feature_matching_loss):
                     #     train_loss = train_loss + 2 * feature_matching_loss
                     discriminator_loss, generator_loss = calc_gan_outputs(real_spectrograms=batch[2].to(device),
-                                                                      fake_spectrograms=generated_spectrograms,
+                                                                      fake_spectrograms=output_spectrograms,
                                                                       spectrogram_lengths=batch[3].to(device),
                                                                       discriminator=discriminator)
                     if not torch.isnan(discriminator_loss):
@@ -357,3 +359,7 @@ def get_random_window(generated_sequences, real_sequences, lengths):
 
         max_start = length - window_size
         start = random.randint(0, max_start)
+
+        generated_windows.append(fake_spec_unpadded[start:start + window_size].unsqueeze(0))
+        real_windows.append(real_spec_unpadded[start:start + window_size].unsqueeze(0))
+    return torch.cat(generated_windows, dim=0), torch.cat(real_windows, dim=0)

@@ -36,8 +36,7 @@ class FastSpeech2Loss(torch.nn.Module):
         self.mse_criterion = torch.nn.MSELoss(reduction=reduction)
         self.duration_criterion = DurationPredictorLoss(reduction=reduction)
 
-    def forward(self, after_outs, before_outs, discriminator_output_w_gen, discriminator_output_w_gold, 
-        discriminator_spec_map_w_gen, discriminator_spec_map_w_gold, d_outs, p_outs, e_outs, ys,
+    def forward(self, after_outs, before_outs, d_outs, p_outs, e_outs, ys,
         ds, ps, es, ilens, olens, ):
         """
         Args:

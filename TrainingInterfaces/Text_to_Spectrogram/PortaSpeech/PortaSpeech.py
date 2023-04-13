@@ -281,10 +281,6 @@ class PortaSpeech(torch.nn.Module, ABC):
         # forward propagation
         before_outs, \
         after_outs, \
-        discriminator_output_w_gen, \
-        discriminator_output_w_gold, \
-        discriminator_spec_map_w_gen, \
-        discriminator_spec_map_w_gold, \
         d_outs, \
         p_outs, \
         e_outs, \
@@ -300,7 +296,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                                   lang_ids=lang_ids,
                                   run_glow=run_glow)
         # calculate loss
-        l1_loss, duration_loss, pitch_loss, energy_loss, discriminator_loss, adverserial_loss, feature_matching_loss = self.criterion(after_outs=after_outs,
+        l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(after_outs=after_outs,
                                                                          # if a regular postnet is used, the post-postnet outs have to go here. The flow has its own loss though, so we hard-code this to None
                                                                          before_outs=before_outs,
                                                                         #  discriminator_output_w_gen=discriminator_output_w_gen,
@@ -409,50 +405,9 @@ class PortaSpeech(torch.nn.Module, ABC):
 
         predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet
         
-        # if gold_speech is not None:
-        #     discriminator_output_w_gen_temp = self.discriminator(predicted_spectrogram_before_postnet.transpose(1, 2))
-        #     discriminator_output_w_gen = discriminator_output_w_gen_temp.transpose(1, 2)
-
-        #     discriminator_output_w_gold_temp = self.discriminator(gold_speech.transpose(1, 2))
-        #     discriminator_output_w_gold = discriminator_output_w_gold_temp.transpose(1, 2)
-
-        #     discriminator_spec_map_w_gen = self.discriminator_spec_map(discriminator_output_w_gen_temp).transpose(1,2)
-        #     discriminator_spec_map_w_gold = self.discriminator_spec_map(discriminator_output_w_gold_temp).transpose(1,2)
-
-        #     discriminator_spec_map_w_gen = torch.mean(discriminator_spec_map_w_gen)
-        #     discriminator_spec_map_w_gold = torch.mean(discriminator_spec_map_w_gold)
-        # else:
-        #     discriminator_output_w_gen = float('nan')
-        #     discriminator_output_w_gold = float('nan')
-        #     discriminator_spec_map_w_gen = float('nan')
-        #     discriminator_spec_map_w_gold = float('nan')
-        
-        # forward flow post-net
-        # if run_glow:
-        #     if utterance_embedding is not None:
-        #         before_enriched = _integrate_with_utt_embed(hs=predicted_spectrogram_before_postnet,
-        #                                                     utt_embeddings=utterance_embedding,
-        #                                                     projection=self.decoder_out_embedding_projection)
-        #     else:
-        #         before_enriched = predicted_spectrogram_before_postnet
-
-        #     if is_inference:
-        #         predicted_spectrogram_after_postnet = self.run_post_glow(tgt_mels=None,
-        #                                                                  infer=is_inference,
-        #                                                                  mel_out=before_enriched,
-        #                                                                  encoded_texts=encoded_texts,
-        #                                                                  tgt_nonpadding=None)
-        #     else:
-        #         glow_loss = self.run_post_glow(tgt_mels=gold_speech,
-        #                                        infer=is_inference,
-        #                                        mel_out=before_enriched,
-        #                                        encoded_texts=encoded_texts,
-        #                                        tgt_nonpadding=speech_nonpadding_mask.transpose(1, 2))
-        # else:
-        #     glow_loss = None
         glow_loss = None
         if not is_inference:
-            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_generator, discriminator_output_w_gen, discriminator_output_w_gold, discriminator_spec_map_w_gen, discriminator_spec_map_w_gold, predicted_durations, pitch_predictions, energy_predictions, glow_loss
+            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_generator, predicted_durations, pitch_predictions, energy_predictions, glow_loss
         else:
             return predicted_spectrogram_before_postnet, predicted_spectrogram_after_generator, predicted_durations, pitch_predictions, energy_predictions
 
@@ -513,9 +468,12 @@ class PortaSpeech(torch.nn.Module, ABC):
         self.train()
         if after_outs is None:
             after_outs = before_outs
+        # if return_duration_pitch_energy:
+        #     return (before_outs[0], after_outs[0]), d_outs[0], pitch_predictions[0], energy_predictions[0]
+        # return after_outs[0]
         if return_duration_pitch_energy:
-            return (before_outs[0], after_outs[0]), d_outs[0], pitch_predictions[0], energy_predictions[0]
-        return after_outs[0]
+            return (before_outs, after_outs), d_outs, pitch_predictions, energy_predictions
+        return after_outs        
 
     def run_post_glow(self, tgt_mels, infer, mel_out, encoded_texts, tgt_nonpadding):
         x_recon = mel_out.transpose(1, 2)
