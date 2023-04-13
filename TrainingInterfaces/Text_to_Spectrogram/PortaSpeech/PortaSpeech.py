@@ -468,12 +468,12 @@ class PortaSpeech(torch.nn.Module, ABC):
         self.train()
         if after_outs is None:
             after_outs = before_outs
-        # if return_duration_pitch_energy:
-        #     return (before_outs[0], after_outs[0]), d_outs[0], pitch_predictions[0], energy_predictions[0]
-        # return after_outs[0]
         if return_duration_pitch_energy:
-            return (before_outs, after_outs), d_outs, pitch_predictions, energy_predictions
-        return after_outs        
+            return (before_outs[0], after_outs[0]), d_outs[0], pitch_predictions[0], energy_predictions[0]
+        return after_outs[0]
+        # if return_duration_pitch_energy:
+        #     return (before_outs, after_outs), d_outs, pitch_predictions, energy_predictions
+        # return after_outs        
 
     def run_post_glow(self, tgt_mels, infer, mel_out, encoded_texts, tgt_nonpadding):
         x_recon = mel_out.transpose(1, 2)
