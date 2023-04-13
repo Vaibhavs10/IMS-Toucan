@@ -8,6 +8,7 @@ from TrainingInterfaces.TrainingPipelines.PortaSpeech_IntegrationTest import run
 from TrainingInterfaces.TrainingPipelines.PortaSpeech_MetaCheckpoint import run as meta
 from TrainingInterfaces.TrainingPipelines.finetuning_example import run as fine_tuning_example
 from TrainingInterfaces.TrainingPipelines.PS_ft_lj_cnn_postnet import run as ps_ft_lj_cnn_postnet
+from TrainingInterfaces.TrainingPipelines.PS_ft_lj_cnn_postnet_scratch import run as ps_ft_lj_cnn_postnet_scratch
 from TrainingInterfaces.TrainingPipelines.pretrain_aligner import run as aligner
 
 pipeline_dict = {
@@ -19,6 +20,7 @@ pipeline_dict = {
     "fs_it"    : fs_integration_test,
     "ps_it"    : ps_integration_test,
     "ps_ft_lj" : ps_ft_lj_cnn_postnet,
+    "ps_ft_lj_scratch" : ps_ft_lj_cnn_postnet_scratch,    
 }
 
 if __name__ == '__main__':
