@@ -12,6 +12,7 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 
 from TrainingInterfaces.Spectrogram_to_Embedding.StyleEmbedding import StyleEmbedding
+from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech import SpectrogramDiscriminator
 from Utility.WarmupScheduler import ToucanWarmupScheduler as WarmupScheduler
 from Utility.utils import delete_old_checkpoints
 from Utility.utils import get_most_recent_checkpoint
@@ -151,12 +152,12 @@ def train_loop(net,
                         train_loss = train_loss + pitch_loss
                     if not torch.isnan(energy_loss):
                         train_loss = train_loss + energy_loss
-                    if not torch.isnan(discriminator_loss):
-                        train_loss = train_loss + discriminator_loss
-                    if not torch.isnan(adverserial_loss):
-                        train_loss = train_loss + 0.75 * adverserial_loss
-                    if not torch.isnan(feature_matching_loss):
-                        train_loss = train_loss + 2 * feature_matching_loss  
+                    # if not torch.isnan(discriminator_loss):
+                    #     train_loss = train_loss + discriminator_loss
+                    # if not torch.isnan(adverserial_loss):
+                    #     train_loss = train_loss + 0.75 * adverserial_loss
+                    # if not torch.isnan(feature_matching_loss):
+                    #     train_loss = train_loss + 2 * feature_matching_loss  
 
                 else:
                     # ======================================================
@@ -191,12 +192,12 @@ def train_loop(net,
                         train_loss = train_loss + pitch_loss
                     if not torch.isnan(energy_loss):
                         train_loss = train_loss + energy_loss
-                    if not torch.isnan(discriminator_loss):
-                        train_loss = train_loss + discriminator_loss
-                    if not torch.isnan(adverserial_loss):
-                        train_loss = train_loss + 0.75 * adverserial_loss
-                    if not torch.isnan(feature_matching_loss):
-                        train_loss = train_loss + 2 * feature_matching_loss                                                                      
+                    # if not torch.isnan(discriminator_loss):
+                    #     train_loss = train_loss + discriminator_loss
+                    # if not torch.isnan(adverserial_loss):
+                    #     train_loss = train_loss + 0.75 * adverserial_loss
+                    # if not torch.isnan(feature_matching_loss):
+                    #     train_loss = train_loss + 2 * feature_matching_loss                                                                      
 
                     style_embedding_function.train()
                     style_embedding_of_predicted, out_list_predicted = style_embedding_function(
@@ -297,3 +298,37 @@ def train_loop(net,
             # DONE
             return
         net.train()
+
+
+def calc_gan_outputs(real_spectrograms, fake_spectrograms, spectrogram_lengths, discriminator):
+    # we have signals with lots of padding and different shapes, so we need to extract fixed size windows first.
+    fake_window, real_window = get_random_window(fake_spectrograms, real_spectrograms, spectrogram_lengths)
+    # now we have windows that are [batch_size, 200, 80]
+    critic_loss = discriminator.calc_discriminator_loss(fake_window.unsqueeze(1), real_window.unsqueeze(1))
+    generator_loss = discriminator.calc_generator_feedback(fake_window.unsqueeze(1), real_window.unsqueeze(1))
+    critic_loss = critic_loss
+    generator_loss = generator_loss
+    return critic_loss, generator_loss
+
+
+def get_random_window(generated_sequences, real_sequences, lengths):
+    """
+    This will return a randomized but consistent window of each that can be passed to the discriminator
+    Suboptimal runtime because of a loop, should not be too bad, but a fix would be nice.
+    """
+    generated_windows = list()
+    real_windows = list()
+    window_size = 100  # corresponds to 1.6 seconds of audio in real time
+
+    for end_index, generated, real in zip(lengths.squeeze(), generated_sequences, real_sequences):
+
+        length = end_index
+        real_spec_unpadded = real[:end_index]
+        fake_spec_unpadded = generated[:end_index]
+        while length < window_size:
+            real_spec_unpadded = real_spec_unpadded.repeat((2, 1))
+            fake_spec_unpadded = fake_spec_unpadded.repeat((2, 1))
+            length = length * 2
+
+        max_start = length - window_size
+        start = random.randint(0, max_start)

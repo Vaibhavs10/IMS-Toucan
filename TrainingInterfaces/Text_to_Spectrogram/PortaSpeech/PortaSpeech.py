@@ -212,11 +212,11 @@ class PortaSpeech(torch.nn.Module, ABC):
         # self.generator = CNNGeneratorNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
         #                        n_filts=5, use_batch_norm=True,
         #                        dropout_rate=0.5)
-        self.discriminator  = CNNDiscriminatorNet(idim=output_spectrogram_channels, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
-                               n_filts=5, use_batch_norm=True,
-                               dropout_rate=0.5)
-        self.discriminator_spec_map = Sequential(torch.nn.Conv1d(in_channels=output_spectrogram_channels, out_channels=1, kernel_size=3, bias=False, padding=(3 - 1) // 2),
-                                LeakyReLU(0.2))
+        # self.discriminator  = CNNDiscriminatorNet(idim=output_spectrogram_channels, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+        #                        n_filts=5, use_batch_norm=True,
+        #                        dropout_rate=0.5)
+        # self.discriminator_spec_map = Sequential(torch.nn.Conv1d(in_channels=output_spectrogram_channels, out_channels=1, kernel_size=3, bias=False, padding=(3 - 1) // 2),
+        #                         LeakyReLU(0.2))
 
         # post net is realized as a flow
         # gin_channels = attention_dimension
@@ -409,23 +409,23 @@ class PortaSpeech(torch.nn.Module, ABC):
 
         predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet
         
-        if gold_speech is not None:
-            discriminator_output_w_gen_temp = self.discriminator(predicted_spectrogram_before_postnet.transpose(1, 2))
-            discriminator_output_w_gen = discriminator_output_w_gen_temp.transpose(1, 2)
+        # if gold_speech is not None:
+        #     discriminator_output_w_gen_temp = self.discriminator(predicted_spectrogram_before_postnet.transpose(1, 2))
+        #     discriminator_output_w_gen = discriminator_output_w_gen_temp.transpose(1, 2)
 
-            discriminator_output_w_gold_temp = self.discriminator(gold_speech.transpose(1, 2))
-            discriminator_output_w_gold = discriminator_output_w_gold_temp.transpose(1, 2)
+        #     discriminator_output_w_gold_temp = self.discriminator(gold_speech.transpose(1, 2))
+        #     discriminator_output_w_gold = discriminator_output_w_gold_temp.transpose(1, 2)
 
-            discriminator_spec_map_w_gen = self.discriminator_spec_map(discriminator_output_w_gen_temp).transpose(1,2)
-            discriminator_spec_map_w_gold = self.discriminator_spec_map(discriminator_output_w_gold_temp).transpose(1,2)
+        #     discriminator_spec_map_w_gen = self.discriminator_spec_map(discriminator_output_w_gen_temp).transpose(1,2)
+        #     discriminator_spec_map_w_gold = self.discriminator_spec_map(discriminator_output_w_gold_temp).transpose(1,2)
 
-            discriminator_spec_map_w_gen = torch.mean(discriminator_spec_map_w_gen)
-            discriminator_spec_map_w_gold = torch.mean(discriminator_spec_map_w_gold)
-        else:
-            discriminator_output_w_gen = float('nan')
-            discriminator_output_w_gold = float('nan')
-            discriminator_spec_map_w_gen = float('nan')
-            discriminator_spec_map_w_gold = float('nan')
+        #     discriminator_spec_map_w_gen = torch.mean(discriminator_spec_map_w_gen)
+        #     discriminator_spec_map_w_gold = torch.mean(discriminator_spec_map_w_gold)
+        # else:
+        #     discriminator_output_w_gen = float('nan')
+        #     discriminator_output_w_gold = float('nan')
+        #     discriminator_spec_map_w_gen = float('nan')
+        #     discriminator_spec_map_w_gold = float('nan')
         
         # forward flow post-net
         # if run_glow:
