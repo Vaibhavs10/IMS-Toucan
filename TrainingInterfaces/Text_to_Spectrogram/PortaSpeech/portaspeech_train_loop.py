@@ -70,6 +70,8 @@ def train_loop(net,
     postnet_start_steps = warmup_steps // 2
     net = net.to(device)
 
+    discriminator = SpectrogramDiscriminator().to(device)
+
     style_embedding_function = StyleEmbedding().to(device)
     check_dict = torch.load(path_to_embed_model, map_location=device)
     style_embedding_function.load_state_dict(check_dict["style_emb_func"])
@@ -87,7 +89,7 @@ def train_loop(net,
                               collate_fn=collate_and_pad,
                               persistent_workers=True)
     step_counter = 0
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(list(net.parameters()) + list(discriminator.parameters()), lr=lr)
     scheduler = WarmupScheduler(optimizer, peak_lr=lr, warmup_steps=warmup_steps,
                                 max_steps=phase_1_steps + phase_2_steps)
     grad_scaler = GradScaler()
@@ -116,8 +118,7 @@ def train_loop(net,
         energy_losses_total = list()
         glow_losses_total = list()
         discriminator_losses_total = list()
-        adverserial_losses_total = list()
-        feature_matching_losses_total = list()
+        generator_losses_total = list()
 
         for batch in tqdm(train_loader):
             train_loss = 0.0
@@ -129,7 +130,7 @@ def train_loop(net,
                     style_embedding = style_embedding_function(batch_of_spectrograms=batch[2].to(device),
                                                                batch_of_spectrogram_lengths=batch[3].to(device))
 
-                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, discriminator_loss, adverserial_loss, feature_matching_loss = net(
+                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss = net(
                         text_tensors=batch[0].to(device),
                         text_lengths=batch[1].to(device),
                         gold_speech=batch[2].to(device),
@@ -157,7 +158,18 @@ def train_loop(net,
                     # if not torch.isnan(adverserial_loss):
                     #     train_loss = train_loss + 0.75 * adverserial_loss
                     # if not torch.isnan(feature_matching_loss):
-                    #     train_loss = train_loss + 2 * feature_matching_loss  
+                    #     train_loss = train_loss + 2 * feature_matching_loss
+                    discriminator_loss, generator_loss = calc_gan_outputs(real_spectrograms=batch[2].to(device),
+                                                                      fake_spectrograms=generated_spectrograms,
+                                                                      spectrogram_lengths=batch[3].to(device),
+                                                                      discriminator=discriminator)
+                    if not torch.isnan(discriminator_loss):
+                        train_loss = train_loss + discriminator_loss
+                    if not torch.isnan(generator_loss):
+                        train_loss = train_loss + generator_loss
+                    
+                    discriminator_losses_total.append(discriminator_loss.item())
+                    generator_losses_total.append(generator_loss.item())                                                                      
 
                 else:
                     # ======================================================
@@ -169,7 +181,7 @@ def train_loop(net,
                         batch_of_spectrogram_lengths=batch[3].to(device),
                         return_all_outs=True)
 
-                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, output_spectrograms, discriminator_loss, adverserial_loss, feature_matching_loss = net(
+                    l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, output_spectrograms = net(
                         text_tensors=batch[0].to(device),
                         text_lengths=batch[1].to(device),
                         gold_speech=batch[2].to(device),
@@ -197,7 +209,18 @@ def train_loop(net,
                     # if not torch.isnan(adverserial_loss):
                     #     train_loss = train_loss + 0.75 * adverserial_loss
                     # if not torch.isnan(feature_matching_loss):
-                    #     train_loss = train_loss + 2 * feature_matching_loss                                                                      
+                    #     train_loss = train_loss + 2 * feature_matching_loss
+                    discriminator_loss, generator_loss = calc_gan_outputs(real_spectrograms=batch[2].to(device),
+                                                                      fake_spectrograms=generated_spectrograms,
+                                                                      spectrogram_lengths=batch[3].to(device),
+                                                                      discriminator=discriminator)
+                    if not torch.isnan(discriminator_loss):
+                        train_loss = train_loss + discriminator_loss
+                    if not torch.isnan(generator_loss):
+                        train_loss = train_loss + generator_loss
+                    
+                    discriminator_losses_total.append(discriminator_loss.item())
+                    generator_losses_total.append(generator_loss.item())                                                                                          
 
                     style_embedding_function.train()
                     style_embedding_of_predicted, out_list_predicted = style_embedding_function(
@@ -219,8 +242,9 @@ def train_loop(net,
                 pitch_losses_total.append(pitch_loss.item())
                 energy_losses_total.append(energy_loss.item())
                 discriminator_losses_total.append(discriminator_loss.item())
-                adverserial_losses_total.append(adverserial_loss.item())
-                feature_matching_losses_total.append(feature_matching_loss.item())
+                generator_losses_total.append(generator_loss.item())                
+                # adverserial_losses_total.append(adverserial_loss.item())
+                # feature_matching_losses_total.append(feature_matching_loss.item())
 
             if glow_loss is not None:
                 if step_counter > postnet_start_steps and not torch.isnan(glow_loss):
@@ -290,8 +314,9 @@ def train_loop(net,
                 "cycle_loss":    sum(cycle_losses_this_epoch) / len(cycle_losses_this_epoch) if len(
                     cycle_losses_this_epoch) != 0 else None,
                 "discriminator_loss": round(sum(discriminator_losses_total) / len(discriminator_losses_total), 3),
-                "adverserial_loss": round(sum(adverserial_losses_total) / len(adverserial_losses_total), 3),
-                "feature_matching_loss": round(sum(feature_matching_losses_total) / len(feature_matching_losses_total), 3),
+                "generator_loss": round(sum(generator_losses_total) / len(generator_losses_total), 3),                
+                # "adverserial_loss": round(sum(adverserial_losses_total) / len(adverserial_losses_total), 3),
+                # "feature_matching_loss": round(sum(feature_matching_losses_total) / len(feature_matching_losses_total), 3),
                 "Steps":         step_counter,
             })
         if step_counter > steps:

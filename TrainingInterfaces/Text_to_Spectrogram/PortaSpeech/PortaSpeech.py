@@ -303,10 +303,10 @@ class PortaSpeech(torch.nn.Module, ABC):
         l1_loss, duration_loss, pitch_loss, energy_loss, discriminator_loss, adverserial_loss, feature_matching_loss = self.criterion(after_outs=after_outs,
                                                                          # if a regular postnet is used, the post-postnet outs have to go here. The flow has its own loss though, so we hard-code this to None
                                                                          before_outs=before_outs,
-                                                                         discriminator_output_w_gen=discriminator_output_w_gen,
-                                                                         discriminator_output_w_gold=discriminator_output_w_gold,
-                                                                         discriminator_spec_map_w_gen=discriminator_spec_map_w_gen,
-                                                                         discriminator_spec_map_w_gold=discriminator_spec_map_w_gold,
+                                                                        #  discriminator_output_w_gen=discriminator_output_w_gen,
+                                                                        #  discriminator_output_w_gold=discriminator_output_w_gold,
+                                                                        #  discriminator_spec_map_w_gen=discriminator_spec_map_w_gen,
+                                                                        #  discriminator_spec_map_w_gold=discriminator_spec_map_w_gold,
                                                                          d_outs=d_outs, p_outs=p_outs,
                                                                          e_outs=e_outs, ys=gold_speech,
                                                                          ds=gold_durations, ps=gold_pitch,
@@ -317,8 +317,8 @@ class PortaSpeech(torch.nn.Module, ABC):
         if return_mels:
             if after_outs is None:
                 after_outs = before_outs
-            return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, after_outs, discriminator_loss, adverserial_loss, feature_matching_loss
-        return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, discriminator_loss, adverserial_loss, feature_matching_loss
+            return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, after_outs
+        return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss
 
     def _forward(self,
                  text_tensors,

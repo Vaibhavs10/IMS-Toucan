@@ -84,11 +84,11 @@ class FastSpeech2Loss(torch.nn.Module):
         pitch_loss = self.mse_criterion(p_outs, ps)
         energy_loss = self.mse_criterion(e_outs, es)
 
-        discriminator_loss = self.mse_criterion(torch.ones_like(discriminator_spec_map_w_gold), discriminator_spec_map_w_gold) + self.mse_criterion(torch.zeros_like(discriminator_spec_map_w_gen), discriminator_spec_map_w_gen)
+        # discriminator_loss = self.mse_criterion(torch.ones_like(discriminator_spec_map_w_gold), discriminator_spec_map_w_gold) + self.mse_criterion(torch.zeros_like(discriminator_spec_map_w_gen), discriminator_spec_map_w_gen)
 
-        adverserial_loss = self.mse_criterion(torch.ones_like(discriminator_spec_map_w_gen), discriminator_spec_map_w_gen)
+        # adverserial_loss = self.mse_criterion(torch.ones_like(discriminator_spec_map_w_gen), discriminator_spec_map_w_gen)
 
-        feature_matching_loss = self.l1_criterion(discriminator_output_w_gen, discriminator_output_w_gold)
+        # feature_matching_loss = self.l1_criterion(discriminator_output_w_gen, discriminator_output_w_gold)
 
 
         # make weighted mask and apply it
@@ -111,8 +111,8 @@ class FastSpeech2Loss(torch.nn.Module):
             pitch_weights = duration_weights.unsqueeze(-1)
             pitch_loss = pitch_loss.mul(pitch_weights).masked_select(pitch_masks).sum()
             energy_loss = (energy_loss.mul(pitch_weights).masked_select(pitch_masks).sum())
-            feature_matching_loss = feature_matching_loss.mul(out_weights).masked_select(out_masks).sum()
-            discriminator_loss = discriminator_loss.sum()
-            adverserial_loss = adverserial_loss.sum()
+            # feature_matching_loss = feature_matching_loss.mul(out_weights).masked_select(out_masks).sum()
+            # discriminator_loss = discriminator_loss.sum()
+            # adverserial_loss = adverserial_loss.sum()
 
-        return l1_loss, duration_loss, pitch_loss, energy_loss, discriminator_loss, adverserial_loss, feature_matching_loss
+        return l1_loss, duration_loss, pitch_loss, energy_loss
