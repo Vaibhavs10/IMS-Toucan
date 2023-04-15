@@ -206,12 +206,7 @@ def train_loop(net,
                         train_loss = train_loss + pitch_loss
                     if not torch.isnan(energy_loss):
                         train_loss = train_loss + energy_loss
-                    # if not torch.isnan(discriminator_loss):
-                    #     train_loss = train_loss + discriminator_loss
-                    # if not torch.isnan(adverserial_loss):
-                    #     train_loss = train_loss + 0.75 * adverserial_loss
-                    # if not torch.isnan(feature_matching_loss):
-                    #     train_loss = train_loss + 2 * feature_matching_loss
+
                     discriminator_loss, generator_loss = calc_gan_outputs(real_spectrograms=batch[2].to(device),
                                                                       fake_spectrograms=output_spectrograms,
                                                                       spectrogram_lengths=batch[3].to(device),
@@ -334,6 +329,7 @@ def calc_gan_outputs(real_spectrograms, fake_spectrograms, spectrogram_lengths, 
     critic_loss = discriminator.calc_discriminator_loss(fake_window.unsqueeze(1), real_window.unsqueeze(1))
     generator_loss = discriminator.calc_generator_feedback(fake_window.unsqueeze(1), real_window.unsqueeze(1))
     critic_loss = critic_loss
+    print(critic_loss)
     generator_loss = generator_loss
     return critic_loss, generator_loss
 
