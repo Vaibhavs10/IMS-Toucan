@@ -39,7 +39,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
     if model_dir is not None:
         save_dir = model_dir
     else:
-        save_dir = os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_GAN_UNet_001")  # RENAME TO SOMETHING MEANINGFUL FOR YOUR DATA
+        save_dir = os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_GAN_UNet_001_fmaps")  # RENAME TO SOMETHING MEANINGFUL FOR YOUR DATA
     os.makedirs(save_dir, exist_ok=True)
 
     all_train_sets = list()  # YOU CAN HAVE MULTIPLE LANGUAGES, OR JUST ONE. JUST MAKE ONE ConcatDataset PER LANGUAGE AND ADD IT TO THE LIST.
@@ -61,7 +61,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
                datasets=all_train_sets,
                device=device,
                save_directory=save_dir,
-               batch_size=24,  # YOU MIGHT GET OUT OF MEMORY ISSUES ON SMALL GPUs, IF SO, DECREASE THIS.
+               batch_size=16,  # YOU MIGHT GET OUT OF MEMORY ISSUES ON SMALL GPUs, IF SO, DECREASE THIS.
                eval_lang="en",  # THE LANGUAGE YOUR PROGRESS PLOTS WILL BE MADE IN
                lr=0.001,
                warmup_steps=4000,

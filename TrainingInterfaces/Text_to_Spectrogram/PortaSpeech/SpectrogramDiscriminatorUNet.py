@@ -85,6 +85,7 @@ class DiscriminatorNet(nn.Module):
         feature_maps = list()
         for d_up in self.up:
             y = d_up(y)
+            feature_maps.append(y)
             y = nn.functional.leaky_relu(y, 0.2)
             upsample_outputs.append(y) 
 
@@ -94,13 +95,14 @@ class DiscriminatorNet(nn.Module):
         counter = 0
         uo_len = len(upsample_outputs)
         for d_down in self.down:
-            print(d_down)
             if counter == 0:
-                y = d_down(y)
+                y = d_down(nn.functional.leaky_relu(y, 0.2))
+                feature_maps.append(y)
                 y = nn.functional.leaky_relu(y, 0.2)
             if counter >= 1:
                 _ = torch.cat((y, upsample_outputs[uo_len - counter -1]), dim=1)
                 y = d_down(torch.cat((y, upsample_outputs[uo_len - counter - 1]), dim=1))
+                feature_maps.append(y)
                 y = nn.functional.leaky_relu(y, 0.2)
             counter+=1
         
