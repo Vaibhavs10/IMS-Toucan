@@ -13,7 +13,7 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 
 from TrainingInterfaces.Spectrogram_to_Embedding.StyleEmbedding import StyleEmbedding
-from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.SpectrogramDiscriminator import SpectrogramDiscriminator
+from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.SpectrogramDiscriminatorUNet import SpectrogramDiscriminator
 from Utility.WarmupScheduler import ToucanWarmupScheduler as WarmupScheduler
 from Utility.utils import delete_old_checkpoints
 from Utility.utils import get_most_recent_checkpoint
