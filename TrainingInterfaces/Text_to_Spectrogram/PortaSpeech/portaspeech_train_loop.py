@@ -330,7 +330,7 @@ def calc_gan_outputs(real_spectrograms, fake_spectrograms, spectrogram_lengths, 
     generator_loss = discriminator.calc_generator_feedback(fake_window.unsqueeze(1), real_window.unsqueeze(1))
     critic_loss = critic_loss
     print(critic_loss)
-    generator_loss = generator_loss
+    generator_loss = 0.25 * generator_loss
     return critic_loss, generator_loss
 
 
