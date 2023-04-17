@@ -14,8 +14,7 @@ from Layers.VariancePredictor import VariancePredictor
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
-from diffusion_utils.shallow_diffusion_tts import *
-import diffusion_utils.spec_details
+from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.denoiser import SpectogramDenoiser
 from Utility.utils import initialize
 from Utility.utils import make_non_pad_mask
 from Utility.utils import make_pad_mask
@@ -203,14 +202,25 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
-        self.diffusion_spectrogram_denoiser = GaussianDiffusion(
-            out_dims=80,
-            timesteps=100,
-            K_steps=71,
-            loss_type="l1",
-            spec_min=spec_min,
-            spec_max=spec_max,
-            schedule_type="linear",)
+        self.denoiserpostnet = SpectogramDenoiser(
+            odim,
+            adim=adim,
+            layers=20,
+            channels=256,
+            timesteps=1000,
+            timescale=1,
+            max_beta=40.0,
+            scheduler="vpsde",
+            cycle_length=1,
+            )
+        # self.diffusion_spectrogram_denoiser = GaussianDiffusion(
+        #     out_dims=80,
+        #     timesteps=100,
+        #     K_steps=71,
+        #     loss_type="l1",
+        #     spec_min=spec_min,
+        #     spec_max=spec_max,
+        #     schedule_type="linear",)
         # post net is realized as a flow
         # gin_channels = attention_dimension
         # self.post_flow = Glow(
@@ -391,31 +401,30 @@ class PortaSpeech(torch.nn.Module, ABC):
         decoded_speech, _ = self.decoder(encoded_texts, decoder_masks, utterance_embedding)
         predicted_spectrogram_before_postnet = self.feat_out(decoded_speech).view(decoded_speech.size(0), -1, self.odim)
 
-        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
+        predicted_spectrogram_after_postnet = self.denoiserpostnet(encoded_texts, gold_speech, decoder_masks,is_inference)
 
-        # forward flow post-net
-        # if run_glow:
-        #     if utterance_embedding is not None:
-        #         before_enriched = _integrate_with_utt_embed(hs=predicted_spectrogram_before_postnet,
-        #                                                     utt_embeddings=utterance_embedding,
-        #                                                     projection=self.decoder_out_embedding_projection)
-        #     else:
-        #         before_enriched = predicted_spectrogram_before_postnet
-
-        #     if is_inference:
-        #         predicted_spectrogram_after_postnet = self.run_post_glow(tgt_mels=None,
-        #                                                                  infer=is_inference,
-        #                                                                  mel_out=before_enriched,
-        #                                                                  encoded_texts=encoded_texts,
-        #                                                                  tgt_nonpadding=None)
-        #     else:
-        #         glow_loss = self.run_post_glow(tgt_mels=gold_speech,
-        #                                        infer=is_inference,
-        #                                        mel_out=before_enriched,
-        #                                        encoded_texts=encoded_texts,
-        #                                        tgt_nonpadding=speech_nonpadding_mask.transpose(1, 2))
+        # if self.decoder_type == "diffusion":
+        #     before_outs = self.decoder(
+        #         hs, ys, h_masks, is_inference
+        #     )  # (B, T_feats, odim)
         # else:
-        #     glow_loss = None
+        #     zs, _ = self.decoder(hs, h_masks)  # (B, T_feats, adim)
+        #     before_outs = self.feat_out(zs).view(
+        #         zs.size(0), -1, self.odim
+        #     )  # (B, T_feats, odim)
+
+        # # postnet -> (B, T_feats//r * r, odim)
+        # if self.postnet is None:
+        #     after_outs = before_outs
+        # else:
+        #     after_outs = before_outs + self.postnet(
+        #         before_outs.transpose(1, 2)
+        #     ).transpose(1, 2)
+
+        # return before_outs, after_outs, d_outs, p_outs, e_outs
+
+        # predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
+
         glow_loss = None
         if not is_inference:
             return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions, glow_loss

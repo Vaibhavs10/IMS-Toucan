@@ -14,6 +14,146 @@ def weights_nonzero_speech(target):
     dim = target.size(-1)
     return target.abs().sum(-1, keepdim=True).ne(0).float().repeat(1, 1, dim)
 
+def gaussian(window_size: int, sigma: float) -> torch.Tensor:
+    """Gaussian Noise.
+
+    Args:
+        window_size (int): Window size.
+        sigma (float): Noise sigma.
+
+    Returns:
+        torch.Tensor: Noise.
+
+    """
+    gauss = torch.Tensor(
+        [
+            exp(-((x - window_size // 2) ** 2) / float(2 * sigma**2))
+            for x in range(window_size)
+        ]
+    )
+    return gauss / gauss.sum()
+
+
+class SSimLoss(torch.nn.Module):
+    """SSimLoss.
+
+    This is an implementation of structural similarity (SSIM) loss.
+    This code is modified from https://github.com/Po-Hsun-Su/pytorch-ssim.
+
+    """
+
+    def __init__(
+        self,
+        bias: float = 6.0,
+        window_size: int = 11,
+        channels: int = 1,
+        reduction: str = "none",
+    ):
+        """Initialization.
+
+        Args:
+            bias (float, optional): value of the bias. Defaults to 6.0.
+            window_size (int, optional): Window size. Defaults to 11.
+            channels (int, optional): Number of channels. Defaults to 1.
+            reduction (str, optional): Type of reduction during the loss
+                calculation. Defaults to "none".
+
+        """
+        super().__init__()
+        self.bias = bias
+        self.win_len = window_size
+        self.channels = channels
+        self.average = False
+        if reduction == "mean":
+            self.average = True
+
+        win1d = gaussian(window_size, 1.5).unsqueeze(1)
+        win2d = win1d.mm(win1d.t()).float().unsqueeze(0).unsqueeze(0)
+        self.window = torch.Tensor(
+            win2d.expand(channels, 1, window_size, window_size).contiguous()
+        )
+
+    def forward(self, outputs: torch.Tensor, target: torch.Tensor):
+        """Calculate forward propagation.
+
+        Args:
+            outputs (torch.Tensor): Batch of output sequences generated
+                by the model (batch, time, mels).
+            target (torch.Tensor): Batch of sequences with true
+                states (batch, time, mels).
+
+        Returns:
+            Tensor: Loss scalar value.
+
+        """
+        with torch.no_grad():
+            dim = target.size(-1)
+            mask = target.abs().sum(-1, keepdim=True).ne(0).float().repeat(1, 1, dim)
+        outputs = outputs.unsqueeze(1) + self.bias
+        target = target.unsqueeze(1) + self.bias
+        loss = 1 - self.ssim(outputs, target)
+        loss = (loss * mask).sum() / mask.sum()
+        return loss
+
+    def ssim(self, tensor1: torch.Tensor, tensor2: torch.Tensor):
+        """Calculate SSIM loss.
+
+        Args:
+            tensor1 (torch.Tensor): Generated output.
+            tensor2 (torch.Tensor): Groundtruth output.
+
+        Returns:
+            Tensor: Loss scalar value.
+
+        """
+        window = self.window.to(tensor1.device)
+        mu1 = F.conv2d(tensor1, window, padding=self.win_len // 2, groups=self.channels)
+        mu2 = F.conv2d(tensor2, window, padding=self.win_len // 2, groups=self.channels)
+        mu_corr = mu1 * mu2
+
+        mu1 = mu1.pow(2)
+        mu2 = mu2.pow(2)
+
+        sigma1 = (
+            F.conv2d(
+                tensor1 * tensor1,
+                window,
+                padding=self.win_len // 2,
+                groups=self.channels,
+            )
+            - mu1
+        )
+
+        sigma2 = (
+            F.conv2d(
+                tensor2 * tensor2,
+                window,
+                padding=self.win_len // 2,
+                groups=self.channels,
+            )
+            - mu2
+        )
+
+        sigma_corr = (
+            F.conv2d(
+                tensor1 * tensor2,
+                window,
+                padding=self.win_len // 2,
+                groups=self.channels,
+            )
+            - mu_corr
+        )
+
+        C1 = 0.01**2
+        C2 = 0.03**2
+
+        ssim_map = ((2 * mu_corr + C1) * (2 * sigma_corr + C2)) / (
+            (mu1 + mu2 + C1) * (sigma1 + sigma2 + C2)
+        )
+        if self.average:
+            return ssim_map.mean()
+        return ssim_map.mean(1)
+
 
 class FastSpeech2Loss(torch.nn.Module):
 
