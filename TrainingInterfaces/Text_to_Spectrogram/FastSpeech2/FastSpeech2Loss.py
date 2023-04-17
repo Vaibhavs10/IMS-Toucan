@@ -4,6 +4,7 @@ Taken from ESPNet
 from math import exp
 
 import torch
+from torch.nn import functional as F
 
 from Layers.DurationPredictor import DurationPredictorLoss
 from Utility.utils import make_non_pad_mask
