@@ -203,8 +203,8 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                            LayerNorm(output_spectrogram_channels))
 
         self.denoiserpostnet = SpectogramDenoiser(
-            odim,
-            adim=adim,
+            output_spectrogram_channels,
+            adim=attention_dimension,
             layers=20,
             channels=256,
             timesteps=1000,
