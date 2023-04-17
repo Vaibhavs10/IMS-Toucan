@@ -175,6 +175,7 @@ class FastSpeech2Loss(torch.nn.Module):
         self.l1_criterion = torch.nn.L1Loss(reduction=reduction)
         self.mse_criterion = torch.nn.MSELoss(reduction=reduction)
         self.duration_criterion = DurationPredictorLoss(reduction=reduction)
+        self.ssim_criterion = SSimLoss(reduction="none")
 
     def forward(self, after_outs, before_outs, d_outs, p_outs, e_outs, ys,
                 ds, ps, es, ilens, olens, ):
@@ -199,6 +200,8 @@ class FastSpeech2Loss(torch.nn.Module):
             Tensor: Energy predictor loss value.
 
         """
+        ssim_loss = self.ssim_criterion(before_outs, ys)
+
         # apply mask to remove padded part
         if self.use_masking:
             out_masks = make_non_pad_mask(olens).unsqueeze(-1).to(ys.device)
@@ -244,4 +247,4 @@ class FastSpeech2Loss(torch.nn.Module):
             pitch_loss = pitch_loss.mul(pitch_weights).masked_select(pitch_masks).sum()
             energy_loss = (energy_loss.mul(pitch_weights).masked_select(pitch_masks).sum())
 
-        return l1_loss, duration_loss, pitch_loss, energy_loss
+        return l1_loss, duration_loss, pitch_loss, energy_loss, ssim_loss
