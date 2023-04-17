@@ -428,9 +428,9 @@ class SpectogramDenoiser(nn.Module):
             xs_denoised = self.forward_denoise(xs_noisy, steps, condition).unsqueeze(1)
 
             # q-posterior (xs_denoised, xs_noisy, steps)
-            ndims = (batch, *((1,) * (xs_denoised.dim() - 1)))
-            _coef1 = coef1.gather(-1, steps).reshape(ndims)
-            _coef2 = coef2.gather(-1, steps).reshape(ndims)
+            ndims = (batch, *((1,) * (xs_denoised.dim() - 1))).to(device)
+            _coef1 = coef1.gather(-1, steps).reshape(ndims).to(device)
+            _coef2 = coef2.gather(-1, steps).reshape(ndims).to(device)
             q_mean = _coef1 * xs_denoised + _coef2 * xs_noisy
             q_log_var = post_var.gather(-1, steps).reshape(ndims)
 
