@@ -10,10 +10,7 @@ import torch.nn.functional as F
 from torch import nn
 from tqdm import tqdm
 
-# from modules.tts.fs2_orig import FastSpeech2Orig
 from diffusion_utils.net import DiffNet
-
-#from modules.tts.commons.align_ops import expand_states //directly copying this below
 
 def expand_states(h, mel2token):
     h = F.pad(h, [0, 0, 1, 0])
@@ -73,50 +70,6 @@ beta_schedule = {
 }
 
 
-DIFF_DECODERS = {
-    'wavenet': lambda hp: DiffNet(hp),
-}
-
-# VB: This would effectively just be a forward pass on NoPostNet PortaSpeech
-# VB: this returns 3 things - decoder input, decoder output i.e. mel and another random noise vector (need to double check this)
-# class AuxModel(FastSpeech2Orig):
-#     def forward(self, txt_tokens, mel2ph=None, spk_embed=None, spk_id=None,
-#                 f0=None, uv=None, energy=None, infer=False, **kwargs):
-#         ret = {}
-#         encoder_out = self.encoder(txt_tokens)  # [B, T, C]
-#         src_nonpadding = (txt_tokens > 0).float()[:, :, None]
-#         style_embed = self.forward_style_embed(spk_embed, spk_id)
-
-#         # add dur
-#         dur_inp = (encoder_out + style_embed) * src_nonpadding
-#         mel2ph = self.forward_dur(dur_inp, mel2ph, txt_tokens, ret)
-#         tgt_nonpadding = (mel2ph > 0).float()[:, :, None]
-#         decoder_inp = decoder_inp_ = expand_states(encoder_out, mel2ph)
-
-#         # add pitch and energy embed
-#         if self.hparams['use_pitch_embed']:
-#             pitch_inp = (decoder_inp_ + style_embed) * tgt_nonpadding
-#             decoder_inp = decoder_inp + self.forward_pitch(pitch_inp, f0, uv, mel2ph, ret, encoder_out)
-
-#         # add pitch and energy embed
-#         if self.hparams['use_energy_embed']:
-#             energy_inp = (decoder_inp_ + style_embed) * tgt_nonpadding
-#             decoder_inp = decoder_inp + self.forward_energy(energy_inp, energy, ret)
-
-#         # decoder input
-#         ret['decoder_inp'] = decoder_inp = (decoder_inp + style_embed) * tgt_nonpadding
-#         if self.hparams['dec_inp_add_noise']:
-#             B, T, _ = decoder_inp.shape
-#             z = kwargs.get('adv_z', torch.randn([B, T, self.z_channels])).to(decoder_inp.device)
-#             ret['adv_z'] = z
-#             decoder_inp = torch.cat([decoder_inp, z], -1)
-#             decoder_inp = self.dec_inp_noise_proj(decoder_inp) * tgt_nonpadding
-#         if kwargs['skip_decoder']:
-#             return ret
-#         ret['mel_out'] = self.forward_decoder(decoder_inp, tgt_nonpadding, ret, infer=infer, **kwargs)
-#         return ret
-
-
 class GaussianDiffusion(nn.Module):
     def __init__(self, 
                 out_dims=80,
@@ -132,18 +85,20 @@ class GaussianDiffusion(nn.Module):
 
         out_dims = out_dims
         # always DiffNet - Put the parameters in here
-        denoise_fn = DiffNet()
-        timesteps = timesteps
-        K_step = K_step
-        loss_type = loss_type
+        out_dims = 80
+        timesteps = 100
+        K_step = 71
+        loss_type = "l1"
         spec_min = spec_min
         spec_max = spec_max
         schedule_type = "linear"
-
+        self.num_timesteps = 100
+        self.K_step = 71
+        self.loss_type = "l1"        
         self.denoise_fn = denoise_fn
+        self.mel_bins = out_dims        
         # Replace fs2 here
         # self.fs2 = AuxModel(dict_size, hparams)
-        self.mel_bins = out_dims
         # Defaults to linear & max_beta to 0.06
         if schedule_type == 'linear':
             betas = linear_beta_schedule(timesteps, 0.06)
