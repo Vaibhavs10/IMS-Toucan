@@ -63,7 +63,7 @@ class DiffNet(nn.Module):
     def __init__(self):
         super().__init__()
         in_dims = 80
-        self.encoder_hidden = 256
+        self.encoder_hidden = 192
         self.residual_layers = 20
         self.residual_channels = 256
         self.dilation_cycle_length = 1
