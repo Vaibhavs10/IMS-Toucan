@@ -202,25 +202,25 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
-        self.denoiserpostnet = SpectogramDenoiser(
-            output_spectrogram_channels,
-            adim=attention_dimension,
-            layers=20,
-            channels=256,
-            timesteps=1000,
-            timescale=1,
-            max_beta=40.0,
-            scheduler="vpsde",
-            cycle_length=1,
-            )
-        # self.diffusion_spectrogram_denoiser = GaussianDiffusion(
-        #     out_dims=80,
-        #     timesteps=100,
-        #     K_steps=71,
-        #     loss_type="l1",
-        #     spec_min=spec_min,
-        #     spec_max=spec_max,
-        #     schedule_type="linear",)
+        # self.denoiserpostnet = SpectogramDenoiser(
+        #     output_spectrogram_channels,
+        #     adim=attention_dimension,
+        #     layers=20,
+        #     channels=256,
+        #     timesteps=1000,
+        #     timescale=1,
+        #     max_beta=40.0,
+        #     scheduler="vpsde",
+        #     cycle_length=1,
+        #     )
+        self.diffusion_spectrogram_denoiser = GaussianDiffusion(
+            out_dims=80,
+            timesteps=100,
+            K_steps=71,
+            loss_type="l1",
+            spec_min=spec_min,
+            spec_max=spec_max,
+            schedule_type="linear",)
         # post net is realized as a flow
         # gin_channels = attention_dimension
         # self.post_flow = Glow(
@@ -401,7 +401,10 @@ class PortaSpeech(torch.nn.Module, ABC):
         decoded_speech, _ = self.decoder(encoded_texts, decoder_masks, utterance_embedding)
         predicted_spectrogram_before_postnet = self.feat_out(decoded_speech).view(decoded_speech.size(0), -1, self.odim)
 
-        predicted_spectrogram_after_postnet = self.denoiserpostnet(encoded_texts, gold_speech, decoder_masks,is_inference)
+        ret = dict()
+        ret["decoder_inp"] = predicted_spectrogram_before_postnet
+
+        predicted_spectrogram_after_postnet = self.diffusion_spectrogram_denoiser(encoded_texts, gold_speech, decoder_masks, is_inference)
 
         # if self.decoder_type == "diffusion":
         #     before_outs = self.decoder(
