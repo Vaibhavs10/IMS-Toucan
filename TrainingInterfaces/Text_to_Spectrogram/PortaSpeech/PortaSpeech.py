@@ -288,7 +288,8 @@ class PortaSpeech(torch.nn.Module, ABC):
         d_outs, \
         p_outs, \
         e_outs, \
-        glow_loss = self._forward(text_tensors,
+        glow_loss, \
+        diff_loss = self._forward(text_tensors,
                                   text_lengths,
                                   gold_speech,
                                   speech_lengths,
@@ -301,7 +302,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                                   run_glow=run_glow)
 
         # calculate loss
-        l1_loss, duration_loss, pitch_loss, energy_loss, ssim_loss = self.criterion(after_outs=after_outs,
+        l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(after_outs=None,
                                                                          # if a regular postnet is used, the post-postnet outs have to go here. The flow has its own loss though, so we hard-code this to None
                                                                          before_outs=before_outs,
                                                                          d_outs=d_outs, p_outs=p_outs,
@@ -314,8 +315,8 @@ class PortaSpeech(torch.nn.Module, ABC):
         if return_mels:
             if after_outs is None:
                 after_outs = before_outs
-            return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, ssim_loss, after_outs
-        return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, ssim_loss
+            return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, diff_loss, after_outs
+        return l1_loss, duration_loss, pitch_loss, energy_loss, glow_loss, kl_loss, diff_loss
 
     def _forward(self,
                  text_tensors,
@@ -406,6 +407,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         ret["mel_out"] = predicted_spectrogram_before_postnet
 
         if not is_inference:
+            # need to figure out padding, right now it is all a bit shit.
             ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
             diff_loss = ret_output["diff_loss"]
         else:
