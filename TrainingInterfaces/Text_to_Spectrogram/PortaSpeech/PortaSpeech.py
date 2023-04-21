@@ -402,9 +402,15 @@ class PortaSpeech(torch.nn.Module, ABC):
         predicted_spectrogram_before_postnet = self.feat_out(decoded_speech).view(decoded_speech.size(0), -1, self.odim)
 
         ret = dict()
-        ret["decoder_inp"] = predicted_spectrogram_before_postnet
+        ret["decoder_inp"] = encoded_texts
+        ret["mel_out"] = predicted_spectrogram_before_postnet
 
-        predicted_spectrogram_after_postnet = self.diffusion_spectrogram_denoiser(encoded_texts, gold_speech, decoder_masks, is_inference)
+        if not is_inference:
+            ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
+            diff_loss = ret_output["diff_loss"]
+        else:
+            ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
+            predicted_spectrogram_after_postnet = ret_output["mel_out"]
 
         # if self.decoder_type == "diffusion":
         #     before_outs = self.decoder(
@@ -430,7 +436,7 @@ class PortaSpeech(torch.nn.Module, ABC):
 
         glow_loss = None
         if not is_inference:
-            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions, glow_loss
+            return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions, glow_loss, diff_loss
         else:
             return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
 
