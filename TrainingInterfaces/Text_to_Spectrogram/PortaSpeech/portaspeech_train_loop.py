@@ -206,7 +206,7 @@ def train_loop(net,
                 duration_losses_total.append(duration_loss.item())
                 pitch_losses_total.append(pitch_loss.item())
                 energy_losses_total.append(energy_loss.item())
-                ssim_losses_total.append(ssim_loss.item())
+                diff_losses_total.append(diff_loss.item())
 
             if glow_loss is not None:
                 if step_counter > postnet_start_steps and not torch.isnan(glow_loss):

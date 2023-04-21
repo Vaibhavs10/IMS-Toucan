@@ -14,7 +14,9 @@ from Layers.VariancePredictor import VariancePredictor
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
-from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.denoiser import SpectogramDenoiser
+#from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.denoiser import SpectogramDenoiser
+from diffusion_utils.shallow_diffusion_tts import *
+from diffusion_utils.spec_details import *
 from Utility.utils import initialize
 from Utility.utils import make_non_pad_mask
 from Utility.utils import make_pad_mask
@@ -410,6 +412,7 @@ class PortaSpeech(torch.nn.Module, ABC):
             # need to figure out padding, right now it is all a bit shit.
             ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
             diff_loss = ret_output["diff_loss"]
+            predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
         else:
             ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
             predicted_spectrogram_after_postnet = ret_output["mel_out"]

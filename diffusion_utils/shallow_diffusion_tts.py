@@ -72,15 +72,13 @@ beta_schedule = {
 
 class GaussianDiffusion(nn.Module):
     def __init__(self, 
+                spec_min,
+                spec_max,
                 out_dims=80,
                 timesteps=100,
                 K_steps=71,
                 loss_type="l1",
-                spec_min,
-                spec_max,
-                schedule_type="linear", 
-                out_dims=None,
-                ret):
+                schedule_type="linear",):
         super().__init__()
 
         out_dims = out_dims
@@ -92,6 +90,7 @@ class GaussianDiffusion(nn.Module):
         spec_min = spec_min
         spec_max = spec_max
         schedule_type = "linear"
+        denoise_fn = DiffNet()
         self.num_timesteps = 100
         self.K_step = 71
         self.loss_type = "l1"        
@@ -208,9 +207,9 @@ class GaussianDiffusion(nn.Module):
 
         return loss
 
-    def forward(self, txt_tokens, mel2ph=None, spk_embed=None, spk_id=None,
+    def forward(self, ret, mel2ph=None, spk_embed=None, spk_id=None,
                 ref_mels=None, f0=None, uv=None, energy=None, infer=False, **kwargs):
-        b, *_, device = *txt_tokens.shape, txt_tokens.device
+        b, *_, device = *ret['decoder_inp'].shape, ret['decoder_inp'].device
         # ret = self.fs2(txt_tokens, mel2ph=mel2ph, spk_embed=spk_embed, spk_id=spk_id,
         #                         f0=f0, uv=uv, energy=energy, infer=infer, skip_decoder=(not infer), **kwargs)
         cond = ret['decoder_inp'].transpose(1, 2)
