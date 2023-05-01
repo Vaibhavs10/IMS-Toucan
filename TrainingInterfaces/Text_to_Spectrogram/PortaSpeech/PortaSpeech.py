@@ -14,7 +14,6 @@ from Layers.VariancePredictor import VariancePredictor
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
-#from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.denoiser import SpectogramDenoiser
 from diffusion_utils.shallow_diffusion_tts import *
 from diffusion_utils.spec_details import *
 from Utility.utils import initialize
@@ -204,17 +203,6 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
-        # self.denoiserpostnet = SpectogramDenoiser(
-        #     output_spectrogram_channels,
-        #     adim=attention_dimension,
-        #     layers=20,
-        #     channels=256,
-        #     timesteps=1000,
-        #     timescale=1,
-        #     max_beta=40.0,
-        #     scheduler="vpsde",
-        #     cycle_length=1,
-        #     )
         self.diffusion_spectrogram_denoiser = GaussianDiffusion(
             out_dims=80,
             timesteps=100,
@@ -223,25 +211,6 @@ class PortaSpeech(torch.nn.Module, ABC):
             spec_min=spec_min,
             spec_max=spec_max,
             schedule_type="linear",)
-        # post net is realized as a flow
-        # gin_channels = attention_dimension
-        # self.post_flow = Glow(
-        #     in_channels=output_spectrogram_channels,
-        #     hidden_channels=192,  # post_glow_hidden  (original 192 in paper)
-        #     kernel_size=3,  # post_glow_kernel_size
-        #     dilation_rate=1,
-        #     n_blocks=16,  # post_glow_n_blocks (original 12 in paper)
-        #     n_layers=3,  # post_glow_n_block_layers (original 3 in paper)
-        #     n_split=4,
-        #     n_sqz=2,
-        #     gin_channels=gin_channels,
-        #     share_cond_layers=False,  # post_share_cond_layers
-        #     share_wn_layers=4,  # share_wn_layers
-        #     sigmoid_scale=False  # sigmoid_scale
-        # )
-        # self.prior_dist = dist.Normal(0, 1)
-
-        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
 
         # initialize parameters
         self._reset_parameters(init_type=init_type, init_enc_alpha=init_enc_alpha, init_dec_alpha=init_dec_alpha)
@@ -416,28 +385,6 @@ class PortaSpeech(torch.nn.Module, ABC):
         else:
             ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
             predicted_spectrogram_after_postnet = ret_output["mel_out"]
-
-        # if self.decoder_type == "diffusion":
-        #     before_outs = self.decoder(
-        #         hs, ys, h_masks, is_inference
-        #     )  # (B, T_feats, odim)
-        # else:
-        #     zs, _ = self.decoder(hs, h_masks)  # (B, T_feats, adim)
-        #     before_outs = self.feat_out(zs).view(
-        #         zs.size(0), -1, self.odim
-        #     )  # (B, T_feats, odim)
-
-        # # postnet -> (B, T_feats//r * r, odim)
-        # if self.postnet is None:
-        #     after_outs = before_outs
-        # else:
-        #     after_outs = before_outs + self.postnet(
-        #         before_outs.transpose(1, 2)
-        #     ).transpose(1, 2)
-
-        # return before_outs, after_outs, d_outs, p_outs, e_outs
-
-        # predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
 
         glow_loss = None
         if not is_inference:
