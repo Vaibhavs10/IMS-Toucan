@@ -8,8 +8,8 @@ from TrainingInterfaces.TrainingPipelines.PortaSpeech_IntegrationTest import run
 from TrainingInterfaces.TrainingPipelines.PortaSpeech_MetaCheckpoint import run as meta
 from TrainingInterfaces.TrainingPipelines.finetuning_example import run as fine_tuning_example
 from TrainingInterfaces.TrainingPipelines.PS_ft_lj_no_postnet import run as ps_ft_lj_no_postnet
-from TrainingInterfaces.TrainingPipelines.PS_ft_lj_no_postnet_scratch import run as ps_ft_lj_no_postnet_scratch
-from TrainingInterfaces.TrainingPipelines.PS_ft_lj_ddpm_postnet import run as ps_ft_lj_ddpm_postnet_scratch
+#from TrainingInterfaces.TrainingPipelines.PS_ft_lj_no_postnet_scratch import run as ps_ft_lj_no_postnet_scratch
+from TrainingInterfaces.TrainingPipelines.PS_ft_lj_ddpm_postnet import run as ps_ft_lj_ddpm_postnet
 from TrainingInterfaces.TrainingPipelines.pretrain_aligner import run as aligner
 
 pipeline_dict = {
@@ -20,8 +20,8 @@ pipeline_dict = {
     "fine_ex"  : fine_tuning_example,
     "fs_it"    : fs_integration_test,
     "ps_it"    : ps_integration_test,
-    "ps_ft_lj" : ps_ft_lj_no_postnet,
-    "ps_ft_lj_scratch" : ps_ft_lj_ddpm_postnet_scratch,
+    "ps_ft_lj" : ps_ft_lj_ddpm_postnet,
+#    "ps_ft_lj_scratch" : ps_ft_lj_ddpm_postnet_scratch,
 
 }
 
