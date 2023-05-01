@@ -13,8 +13,8 @@ from Layers.DurationPredictor import DurationPredictor
 from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
 from Layers.PostNet import PostNet
-from Layers.CNNDiscriminatorNet import CNNDiscriminatorNet
-from Layers.CNNGeneratorNet import CNNGeneratorNet
+# from Layers.CNNDiscriminatorNet import CNNDiscriminatorNet
+# from Layers.CNNGeneratorNet import CNNGeneratorNet
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
