@@ -97,7 +97,7 @@ def train_loop(net,
     if path_to_checkpoint is not None:
         check_dict = torch.load(path_to_checkpoint, map_location=device)
         net.load_state_dict(check_dict["model"], strict = False)
-        freeze_all_except_postnet(net)
+        # freeze_all_except_postnet(net)
         if not fine_tune:
             optimizer.load_state_dict(check_dict["optimizer"])
             scheduler.load_state_dict(check_dict["scheduler"])
