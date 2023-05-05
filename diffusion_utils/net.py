@@ -65,7 +65,7 @@ class DiffNet(nn.Module):
         in_dims = 80
         self.encoder_hidden = 192
         self.residual_layers = 20
-        self.residual_channels = 256
+        self.residual_channels = 192
         self.dilation_cycle_length = 1
 
         self.input_projection = Conv1d(in_dims, self.residual_channels, 1)

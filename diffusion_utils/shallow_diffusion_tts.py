@@ -85,14 +85,14 @@ class GaussianDiffusion(nn.Module):
         # always DiffNet - Put the parameters in here
         out_dims = 80
         timesteps = 100
-        K_step = 71
+        K_step = 100
         loss_type = "l1"
         spec_min = spec_min
         spec_max = spec_max
         schedule_type = "linear"
         denoise_fn = DiffNet()
         self.num_timesteps = 100
-        self.K_step = 71
+        self.K_step = 100
         self.loss_type = "l1"        
         self.denoise_fn = denoise_fn
         self.mel_bins = out_dims        

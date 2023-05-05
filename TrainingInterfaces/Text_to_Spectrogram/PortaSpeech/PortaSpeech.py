@@ -206,7 +206,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         self.diffusion_spectrogram_denoiser = GaussianDiffusion(
             out_dims=80,
             timesteps=100,
-            K_steps=71,
+            K_steps=100,
             loss_type="l1",
             spec_min=spec_min,
             spec_max=spec_max,
