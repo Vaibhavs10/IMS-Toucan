@@ -10,6 +10,8 @@ from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
+from diffusion_utils.shallow_diffusion_tts import *
+from diffusion_utils.spec_details import *
 from Utility.utils import make_non_pad_mask
 from Utility.utils import make_pad_mask
 
@@ -176,26 +178,14 @@ class PortaSpeech(torch.nn.Module):
         self.decoder_out_embedding_projection = Sequential(Linear(output_spectrogram_channels + utt_embed_dim,
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
-
-        # # post net is realized as a flow
-        # gin_channels = attention_dimension
-        # self.post_flow = Glow(
-        #     output_spectrogram_channels,
-        #     192,  # post_glow_hidden  (original 192 in paper)
-        #     3,  # post_glow_kernel_size
-        #     1,
-        #     16,  # post_glow_n_blocks
-        #     3,  # post_glow_n_block_layers
-        #     n_split=4,
-        #     n_sqz=2,
-        #     gin_channels=gin_channels,
-        #     share_cond_layers=False,  # post_share_cond_layers
-        #     share_wn_layers=4,  # share_wn_layers
-        #     sigmoid_scale=False  # sigmoid_scale
-        # )
-        # self.prior_dist = dist.Normal(0, 1)
-
-        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
+        self.diffusion_spectrogram_denoiser = GaussianDiffusion(
+            out_dims=80,
+            timesteps=100,
+            K_steps=152,
+            loss_type="l1",
+            spec_min=spec_min,
+            spec_max=spec_max,
+            schedule_type="linear",)
 
         self.load_state_dict(weights)
         self.eval()
@@ -293,10 +283,12 @@ class PortaSpeech(torch.nn.Module):
         else:
             before_enriched = predicted_spectrogram_before_postnet
 
-        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
-        # predicted_spectrogram_after_postnet = self.run_post_glow(mel_out=before_enriched,
-        #                                                          encoded_texts=encoded_texts,
-        #                                                          device=device)
+        ret = dict()
+        ret["decoder_inp"] = encoded_texts
+        ret["mel_out"] = predicted_spectrogram_before_postnet
+        ret_output = self.diffusion_spectrogram_denoiser(ret, infer=True)
+        predicted_spectrogram_after_postnet = ret_output["mel_out"]
+
 
         return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
 
