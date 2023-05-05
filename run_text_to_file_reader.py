@@ -130,4 +130,4 @@ if __name__ == '__main__':
     print(f"running on {exec_device}")
 
     # le_corbeau_et_le_renard(version="NEB_baseline", model_id="NEB", exec_device=exec_device)
-    read_harvard_sentences(model_id="LJSpeech_Flow_0_0005", device="cuda")
+    read_harvard_sentences(model_id="LJSpeech_FrozenFlow_0_001", device="cuda:0")
