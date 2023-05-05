@@ -6,6 +6,7 @@ def freeze_postnet(net):
 def freeze_all_except_postnet(net):
     net.encoder.requires_grad_(False)
     net.duration_predictor.requires_grad_(False)
+    net.pitch_predictor.requires_grad_(False)
     net.pitch_embed.requires_grad_(False)
     net.energy_predictor.requires_grad_(False)
     net.energy_embed.requires_grad_(False)
