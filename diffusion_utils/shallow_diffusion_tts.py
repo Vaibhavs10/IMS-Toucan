@@ -85,14 +85,14 @@ class GaussianDiffusion(nn.Module):
         # always DiffNet - Put the parameters in here
         out_dims = 80
         timesteps = 100
-        K_step = 100
+        K_step = 71
         loss_type = "l1"
         spec_min = spec_min
         spec_max = spec_max
         schedule_type = "linear"
         denoise_fn = DiffNet()
         self.num_timesteps = 100
-        self.K_step = 100
+        self.K_step = 71
         self.loss_type = "l1"        
         self.denoise_fn = denoise_fn
         self.mel_bins = out_dims        
@@ -219,9 +219,10 @@ class GaussianDiffusion(nn.Module):
             x = ref_mels
             x = self.norm_spec(x)
             x = x.transpose(1, 2)[:, None, :, :]  # [B, 1, M, T]
-            ret['diff_loss'] = self.p_losses(x, t, cond)
+            #ret['diff_loss'] = self.p_losses(x, t, cond)
+            nonpadding = ret['nonpadding']
             # nonpadding = (mel2ph != 0).float()
-            # ret['diff_loss'] = self.p_losses(x, t, cond, nonpadding=nonpadding)
+            ret['diff_loss'] = self.p_losses(x, t, cond, nonpadding=nonpadding)
             ret['mel_out'] = None
         else:
             ret['fs2_mel'] = ret['mel_out']

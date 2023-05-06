@@ -206,7 +206,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         self.diffusion_spectrogram_denoiser = GaussianDiffusion(
             out_dims=80,
             timesteps=100,
-            K_steps=100,
+            K_steps=71,
             loss_type="l1",
             spec_min=spec_min,
             spec_max=spec_max,
@@ -379,6 +379,7 @@ class PortaSpeech(torch.nn.Module, ABC):
 
         if not is_inference:
             # need to figure out padding, right now it is all a bit shit.
+            ret['nonpadding'] = speech_nonpadding_mask.transpose(1, 2)
             ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
             diff_loss = ret_output["diff_loss"]
             predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
