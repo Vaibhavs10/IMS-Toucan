@@ -378,7 +378,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         ret["mel_out"] = predicted_spectrogram_before_postnet
 
         if not is_inference:
-            # need to figure out padding, right now it is all a bit shit.
+            
             ret['nonpadding'] = speech_nonpadding_mask.transpose(1, 2)
             ret_output = self.diffusion_spectrogram_denoiser(ret, ref_mels=gold_speech, infer=is_inference)
             diff_loss = ret_output["diff_loss"]
