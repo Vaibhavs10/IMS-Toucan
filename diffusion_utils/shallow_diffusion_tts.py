@@ -2,6 +2,7 @@
 
 import math
 import random
+from collections import deque
 from functools import partial
 from inspect import isfunction
 import numpy as np
@@ -180,6 +181,44 @@ class GaussianDiffusion(nn.Module):
         nonzero_mask = (1 - (t == 0).float()).reshape(b, *((1,) * (len(x.shape) - 1)))
         return model_mean + nonzero_mask * (0.5 * model_log_variance).exp() * noise
 
+    @torch.no_grad()
+    def p_sample_plms(self, x, t, interval, cond, clip_denoised=True, repeat_noise=False):
+        """
+        Use the PLMS method from [Pseudo Numerical Methods for Diffusion Models on Manifolds](https://arxiv.org/abs/2202.09778).
+        """
+
+        def get_x_pred(x, noise_t, t):
+            a_t = extract(self.alphas_cumprod, t, x.shape)
+            if t[0] < interval:
+                a_prev = torch.ones_like(a_t)
+            else:
+                a_prev = extract(self.alphas_cumprod, torch.max(t-interval, torch.zeros_like(t)), x.shape)
+            a_t_sq, a_prev_sq = a_t.sqrt(), a_prev.sqrt()
+
+            x_delta = (a_prev - a_t) * ((1 / (a_t_sq * (a_t_sq + a_prev_sq))) * x - 1 / (a_t_sq * (((1 - a_prev) * a_t).sqrt() + ((1 - a_t) * a_prev).sqrt())) * noise_t)
+            x_pred = x + x_delta
+
+            return x_pred
+
+        noise_list = self.noise_list
+        noise_pred = self.denoise_fn(x, t, cond=cond)
+
+        if len(noise_list) == 0:
+            x_pred = get_x_pred(x, noise_pred, t)
+            noise_pred_prev = self.denoise_fn(x_pred, max(t-interval, 0), cond=cond)
+            noise_pred_prime = (noise_pred + noise_pred_prev) / 2
+        elif len(noise_list) == 1:
+            noise_pred_prime = (3 * noise_pred - noise_list[-1]) / 2
+        elif len(noise_list) == 2:
+            noise_pred_prime = (23 * noise_pred - 16 * noise_list[-1] + 5 * noise_list[-2]) / 12
+        elif len(noise_list) >= 3:
+            noise_pred_prime = (55 * noise_pred - 59 * noise_list[-1] + 37 * noise_list[-2] - 9 * noise_list[-3]) / 24
+
+        x_prev = get_x_pred(x, noise_pred_prime, t)
+        noise_list.append(noise_pred)
+
+        return x_prev
+
     def q_sample(self, x_start, t, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
         return (
@@ -232,14 +271,22 @@ class GaussianDiffusion(nn.Module):
             fs2_mels = fs2_mels.transpose(1, 2)[:, None, :, :]
 
             x = self.q_sample(x_start=fs2_mels, t=torch.tensor([t - 1], device=device).long())
-            
             # VB: commented this out as this key was nowhere to be found in the codebase.
             # if self.hparams.get('gaussian_start') is not None and self.hparams['gaussian_start']:
             #     print('===> gaussian start.')
             #     shape = (cond.shape[0], 1, self.mel_bins, cond.shape[2])
             #     x = torch.randn(shape, device=device)
-            for i in tqdm(reversed(range(0, t)), desc='sample time step', total=t):
-                x = self.p_sample(x, torch.full((b,), i, device=device, dtype=torch.long), cond)
+            pndm_speedup = False
+            if pndm_speedup:
+                self.noise_list = deque(maxlen=4)
+                iteration_interval = hparams['pndm_speedup']
+                for i in tqdm(reversed(range(0, t, iteration_interval)), desc='sample time step',
+                              total=t // iteration_interval):
+                    x = self.p_sample_plms(x, torch.full((b,), i, device=device, dtype=torch.long), iteration_interval,
+                                           cond)            
+            else:
+                for i in tqdm(reversed(range(0, t)), desc='sample time step', total=t):
+                    x = self.p_sample(x, torch.full((b,), i, device=device, dtype=torch.long), cond)
             x = x[:, 0].transpose(1, 2)
             ret['mel_out'] = self.denorm_spec(x)
 
