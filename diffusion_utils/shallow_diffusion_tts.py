@@ -277,7 +277,7 @@ class GaussianDiffusion(nn.Module):
             #     print('===> gaussian start.')
             #     shape = (cond.shape[0], 1, self.mel_bins, cond.shape[2])
             #     x = torch.randn(shape, device=device)
-            pndm_speedup = True
+            pndm_speedup = False
             if pndm_speedup:
                 self.noise_list = deque(maxlen=4)
                 iteration_interval = 10
