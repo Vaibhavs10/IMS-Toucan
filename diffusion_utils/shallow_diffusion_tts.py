@@ -85,15 +85,15 @@ class GaussianDiffusion(nn.Module):
         out_dims = out_dims
         # always DiffNet - Put the parameters in here
         out_dims = 80
-        timesteps = 100
-        K_step = 71
+        timesteps = 1000
+        K_step = 1000
         loss_type = "l1"
         spec_min = spec_min
         spec_max = spec_max
         schedule_type = "linear"
         denoise_fn = DiffNet()
-        self.num_timesteps = 100
-        self.K_step = 71
+        self.num_timesteps = 1000
+        self.K_step = 1000
         self.loss_type = "l1"        
         self.denoise_fn = denoise_fn
         self.mel_bins = out_dims        
@@ -101,7 +101,7 @@ class GaussianDiffusion(nn.Module):
         # self.fs2 = AuxModel(dict_size, hparams)
         # Defaults to linear & max_beta to 0.06
         if schedule_type == 'linear':
-            betas = linear_beta_schedule(timesteps, 0.06)
+            betas = linear_beta_schedule(timesteps, 0.02)
         else:
             betas = cosine_beta_schedule(timesteps)
 
@@ -113,6 +113,7 @@ class GaussianDiffusion(nn.Module):
         self.num_timesteps = int(timesteps)
         self.K_step = K_step
         self.loss_type = loss_type
+        self.noise_list = deque(maxlen=4)
 
         to_torch = partial(torch.tensor, dtype=torch.float32)
 
@@ -279,7 +280,7 @@ class GaussianDiffusion(nn.Module):
             pndm_speedup = False
             if pndm_speedup:
                 self.noise_list = deque(maxlen=4)
-                iteration_interval = hparams['pndm_speedup']
+                iteration_interval = 10
                 for i in tqdm(reversed(range(0, t, iteration_interval)), desc='sample time step',
                               total=t // iteration_interval):
                     x = self.p_sample_plms(x, torch.full((b,), i, device=device, dtype=torch.long), iteration_interval,
