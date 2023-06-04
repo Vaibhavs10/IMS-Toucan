@@ -249,10 +249,12 @@ def build_path_to_transcript_dict_libritts_other500():
 
 
 def build_path_to_transcript_dict_ljspeech():
+    print("reading lj speech")
     path_to_transcript = dict()
     for transcript_file in os.listdir("/mount/resources/speech/corpora/LJSpeech/16kHz/txt"):
         with open("/mount/resources/speech/corpora/LJSpeech/16kHz/txt/" + transcript_file, 'r', encoding='utf8') as tf:
             transcript = tf.read()
+        print(transcript_file)
         wav_path = "/mount/resources/speech/corpora/LJSpeech/16kHz/wav/" + transcript_file.rstrip(".txt") + ".wav"
         path_to_transcript[wav_path] = transcript
     return limit_to_n(path_to_transcript)
