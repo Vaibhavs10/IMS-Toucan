@@ -67,7 +67,7 @@ def train_loop(net,
         path_to_embed_model: path to the pretrained embedding function
     """
     steps = phase_1_steps + phase_2_steps
-    postnet_start_steps = warmup_steps // 2
+    postnet_start_steps = 0
     net = net.to(device)
 
     style_embedding_function = StyleEmbedding().to(device)
@@ -141,7 +141,7 @@ def train_loop(net,
                         utterance_embedding=style_embedding,
                         lang_ids=batch[8].to(device),
                         return_mels=False,
-                        run_glow=step_counter > postnet_start_steps or fine_tune)
+                        run_glow=True)
 
                     if not torch.isnan(l1_loss):
                         train_loss = train_loss + l1_loss
@@ -159,7 +159,7 @@ def train_loop(net,
                 energy_losses_total.append(energy_loss.item())
 
             if glow_loss is not None:
-                if step_counter > postnet_start_steps and not torch.isnan(glow_loss):
+                if not torch.isnan(glow_loss):
                     train_loss = train_loss + glow_loss
                     glow_losses_total.append(glow_loss.item())
 
