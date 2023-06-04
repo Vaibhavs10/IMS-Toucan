@@ -61,17 +61,17 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
                datasets=all_train_sets,
                device=device,
                save_directory=save_dir,
-               batch_size=24,  # YOU MIGHT GET OUT OF MEMORY ISSUES ON SMALL GPUs, IF SO, DECREASE THIS.
+               batch_size=320,  # YOU MIGHT GET OUT OF MEMORY ISSUES ON SMALL GPUs, IF SO, DECREASE THIS.
                eval_lang="en",  # THE LANGUAGE YOUR PROGRESS PLOTS WILL BE MADE IN
                lr=0.001,
-               warmup_steps=5000,
+               warmup_steps=750,
                # DOWNLOAD THESE INITIALIZATION MODELS FROM THE RELEASE PAGE OF THE GITHUB OR RUN THE DOWNLOADER SCRIPT TO GET THEM AUTOMATICALLY
-               path_to_checkpoint=os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_No_0_00075_scratch",
+               path_to_checkpoint=os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_No_0_003_scratch",
                                                "best.pt") if resume_checkpoint is None else resume_checkpoint,
                path_to_embed_model=os.path.join(MODELS_DIR, "Embedding", "embedding_function.pt"),
                fine_tune=True if resume_checkpoint is None else finetune,
                resume=resume,
-               phase_1_steps=50000,
+               phase_1_steps=7500,
                phase_2_steps=0,
                use_wandb=use_wandb)
     if use_wandb:
