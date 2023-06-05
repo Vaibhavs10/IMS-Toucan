@@ -63,8 +63,8 @@ class FastSpeech2Loss(torch.nn.Module):
         if self.use_masking:
             out_masks = make_non_pad_mask(olens).unsqueeze(-1).to(ys.device)
             before_outs = before_outs.masked_select(out_masks)
-            if after_outs is not None:
-                after_outs = after_outs.masked_select(out_masks)
+            # if after_outs is not None:
+            #     after_outs = after_outs.masked_select(out_masks)
             ys = ys.masked_select(out_masks)
             duration_masks = make_non_pad_mask(ilens).to(ys.device)
             d_outs = d_outs.masked_select(duration_masks)
@@ -82,13 +82,6 @@ class FastSpeech2Loss(torch.nn.Module):
         duration_loss = self.duration_criterion(d_outs, ds)
         pitch_loss = self.mse_criterion(p_outs, ps)
         energy_loss = self.mse_criterion(e_outs, es)
-
-        # discriminator_loss = self.mse_criterion(torch.ones_like(discriminator_spec_map_w_gold), discriminator_spec_map_w_gold) + self.mse_criterion(torch.zeros_like(discriminator_spec_map_w_gen), discriminator_spec_map_w_gen)
-
-        # adverserial_loss = self.mse_criterion(torch.ones_like(discriminator_spec_map_w_gen), discriminator_spec_map_w_gen)
-
-        # feature_matching_loss = self.l1_criterion(discriminator_output_w_gen, discriminator_output_w_gold)
-
 
         # make weighted mask and apply it
         if self.use_weighted_masking:
@@ -110,8 +103,5 @@ class FastSpeech2Loss(torch.nn.Module):
             pitch_weights = duration_weights.unsqueeze(-1)
             pitch_loss = pitch_loss.mul(pitch_weights).masked_select(pitch_masks).sum()
             energy_loss = (energy_loss.mul(pitch_weights).masked_select(pitch_masks).sum())
-            # feature_matching_loss = feature_matching_loss.mul(out_weights).masked_select(out_masks).sum()
-            # discriminator_loss = discriminator_loss.sum()
-            # adverserial_loss = adverserial_loss.sum()
 
         return l1_loss, duration_loss, pitch_loss, energy_loss

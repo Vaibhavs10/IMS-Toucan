@@ -205,38 +205,9 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                           LayerNorm(output_spectrogram_channels))
         # # define postnet
-        self.postnet = PostNet(idim=idim, odim=odim, n_layers=postnet_layers, n_chans=postnet_chans,
-                               n_filts=postnet_filts, use_batch_norm=use_batch_norm,
-                               dropout_rate=postnet_dropout_rate)
-        # define postnet
-        # self.generator = CNNGeneratorNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
-        #                        n_filts=5, use_batch_norm=True,
-        #                        dropout_rate=0.5)
-        # self.discriminator  = CNNDiscriminatorNet(idim=output_spectrogram_channels, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
-        #                        n_filts=5, use_batch_norm=True,
-        #                        dropout_rate=0.5)
-        # self.discriminator_spec_map = Sequential(torch.nn.Conv1d(in_channels=output_spectrogram_channels, out_channels=1, kernel_size=3, bias=False, padding=(3 - 1) // 2),
-        #                         LeakyReLU(0.2))
-
-        # post net is realized as a flow
-        # gin_channels = attention_dimension
-        # self.post_flow = Glow(
-        #     in_channels=output_spectrogram_channels,
-        #     hidden_channels=192,  # post_glow_hidden  (original 192 in paper)
-        #     kernel_size=3,  # post_glow_kernel_size
-        #     dilation_rate=1,
-        #     n_blocks=16,  # post_glow_n_blocks (original 12 in paper)
-        #     n_layers=3,  # post_glow_n_block_layers (original 3 in paper)
-        #     n_split=4,
-        #     n_sqz=2,
-        #     gin_channels=gin_channels,
-        #     share_cond_layers=False,  # post_share_cond_layers
-        #     share_wn_layers=4,  # share_wn_layers
-        #     sigmoid_scale=False  # sigmoid_scale
-        # )
-        # self.prior_dist = dist.Normal(0, 1)
-
-        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
+        self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+                               n_filts=5, use_batch_norm=True,
+                               dropout_rate=0.5)
 
         # initialize parameters
         self._reset_parameters(init_type=init_type, init_enc_alpha=init_enc_alpha, init_dec_alpha=init_dec_alpha)
@@ -299,10 +270,6 @@ class PortaSpeech(torch.nn.Module, ABC):
         l1_loss, duration_loss, pitch_loss, energy_loss = self.criterion(after_outs=after_outs,
                                                                          # if a regular postnet is used, the post-postnet outs have to go here. The flow has its own loss though, so we hard-code this to None
                                                                          before_outs=before_outs,
-                                                                        #  discriminator_output_w_gen=discriminator_output_w_gen,
-                                                                        #  discriminator_output_w_gold=discriminator_output_w_gold,
-                                                                        #  discriminator_spec_map_w_gen=discriminator_spec_map_w_gen,
-                                                                        #  discriminator_spec_map_w_gold=discriminator_spec_map_w_gold,
                                                                          d_outs=d_outs, p_outs=p_outs,
                                                                          e_outs=e_outs, ys=gold_speech,
                                                                          ds=gold_durations, ps=gold_pitch,
@@ -470,10 +437,7 @@ class PortaSpeech(torch.nn.Module, ABC):
             after_outs = before_outs
         if return_duration_pitch_energy:
             return (before_outs[0], after_outs[0]), d_outs[0], pitch_predictions[0], energy_predictions[0]
-        return after_outs[0]
-        # if return_duration_pitch_energy:
-        #     return (before_outs, after_outs), d_outs, pitch_predictions, energy_predictions
-        # return after_outs        
+        return after_outs[0]       
 
     def run_post_glow(self, tgt_mels, infer, mel_out, encoded_texts, tgt_nonpadding):
         x_recon = mel_out.transpose(1, 2)
