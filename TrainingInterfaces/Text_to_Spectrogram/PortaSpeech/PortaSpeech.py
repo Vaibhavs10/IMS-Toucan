@@ -479,6 +479,7 @@ class PortaSpeech(torch.nn.Module, ABC):
                 pitch_predictions[0][phoneme_index] = 0.0
         self.train()
         if after_outs is None:
+            print("after_outs is none")
             after_outs = before_outs
         if return_duration_pitch_energy:
             return (before_outs[0], after_outs[0]), d_outs[0], pitch_predictions[0], energy_predictions[0]
