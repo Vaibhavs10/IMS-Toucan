@@ -205,9 +205,9 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                           LayerNorm(output_spectrogram_channels))
         # # define postnet
-        # self.postnet = PostNet(idim=idim, odim=odim, n_layers=postnet_layers, n_chans=postnet_chans,
-        #                        n_filts=postnet_filts, use_batch_norm=use_batch_norm,
-        #                        dropout_rate=postnet_dropout_rate)
+        self.postnet = PostNet(idim=idim, odim=odim, n_layers=postnet_layers, n_chans=postnet_chans,
+                               n_filts=postnet_filts, use_batch_norm=use_batch_norm,
+                               dropout_rate=postnet_dropout_rate)
         # define postnet
         # self.generator = CNNGeneratorNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
         #                        n_filts=5, use_batch_norm=True,
@@ -403,7 +403,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         # # postnet -> (B, Lmax//r * r, odim)
         # after_outs = before_outs + self.postnet(before_outs.transpose(1, 2)).transpose(1, 2)
 
-        predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet
+        predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet + self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2)).transpose(1, 2)
         
         glow_loss = None
         if not is_inference:
