@@ -161,4 +161,5 @@ if __name__ == '__main__':
     # le_corbeau_et_le_renard(version="NEB_baseline", model_id="NEB", exec_device=exec_device)
     # read_harvard_sentences(model_id="LJSpeech_FrozenSDiff_0_0005_10k_lin_15k", device="cuda:0")
     # read_harvard_sentences_03(model_id="LJSpeech_FrozenSDiff_0_0005_10k_lin_15k", device="cuda:0")
-    read_harvard_sentences_06(model_id="LJSpeech_FrozenSDiff_0_0005_10k_lin_15k", device="cuda:0")    
+    # read_harvard_sentences_06(model_id="LJSpeech_FrozenSDiff_0_0005_10k_lin_15k", device="cuda:0")
+    read_harvard_sentences_06(model_id="LJSpeech_FrozenSDiff_0_0005_10k", device="cuda:0")    
