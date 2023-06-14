@@ -153,5 +153,5 @@ def avg_and_save_tts_model(model_dir):
 
 if __name__ == '__main__':
 #    make_best_in_all()
-    model_dir = "/mount/arbeitsdaten56/projekte/synthesis/srivasvv/thesis-playground/tts-postnet-eval/IMS-Toucan/Models/PortaSpeech_LJSpeech_FrozenSD_0_0005_10k_30k_stp"
+    model_dir = "/mount/arbeitsdaten56/projekte/synthesis/srivasvv/thesis-playground/tts-postnet-eval/IMS-Toucan/Models/PortaSpeech_LJSpeech_FrozenSD_0_0005_10k_60k_stp"
     avg_and_save_tts_model(model_dir)
