@@ -61,7 +61,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
                datasets=all_train_sets,
                device=device,
                save_directory=save_dir,
-               batch_size=96,  # YOU MIGHT GET OUT OF MEMORY ISSUES ON SMALL GPUs, IF SO, DECREASE THIS.
+               batch_size=64,  # YOU MIGHT GET OUT OF MEMORY ISSUES ON SMALL GPUs, IF SO, DECREASE THIS.
                eval_lang="en",  # THE LANGUAGE YOUR PROGRESS PLOTS WILL BE MADE IN
                lr=0.001,
                warmup_steps=1000,
