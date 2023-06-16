@@ -12,7 +12,7 @@ from Layers.Conformer import Conformer
 from Layers.DurationPredictor import DurationPredictor
 from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
-from Layers.PostNet import PostNet
+from Layers.PostUNet import PostUNet
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.FastSpeech2.FastSpeech2Loss import FastSpeech2Loss
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
@@ -203,9 +203,10 @@ class PortaSpeech(torch.nn.Module, ABC):
                                                                   output_spectrogram_channels),
                                                           LayerNorm(output_spectrogram_channels))
         # # define postnet
-        self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
-                               n_filts=5, use_batch_norm=True,
-                               dropout_rate=0.5)
+        self.postnet = PostUNet()
+        # self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+        #                        n_filts=5, use_batch_norm=True,
+        #                        dropout_rate=0.5)
 
         # initialize parameters
         self._reset_parameters(init_type=init_type, init_enc_alpha=init_enc_alpha, init_dec_alpha=init_dec_alpha)
@@ -368,7 +369,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         # # postnet -> (B, Lmax//r * r, odim)
         # after_outs = before_outs + self.postnet(before_outs.transpose(1, 2)).transpose(1, 2)
 
-        predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet + self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2)).transpose(1, 2)
+        predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet + self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2).unsqueeze(1)).transpose(1, 2)
         
         glow_loss = None
         if not is_inference:
