@@ -395,7 +395,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         # # postnet -> (B, Lmax//r * r, odim)
         # after_outs = before_outs + self.postnet(before_outs.transpose(1, 2)).transpose(1, 2)
 
-        predicted_spectrogram_after_postnet = self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2), mask=speech_nonpadding_mask.transpose(1,2)).transpose(1, 2)
+        predicted_spectrogram_after_postnet = self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2)).transpose(1, 2)
 
         # forward flow post-net
         # if run_glow:

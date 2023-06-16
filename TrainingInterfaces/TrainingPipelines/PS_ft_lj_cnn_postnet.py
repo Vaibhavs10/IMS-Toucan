@@ -39,7 +39,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
     if model_dir is not None:
         save_dir = model_dir
     else:
-        save_dir = os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_FrozenCNN_NoSG_0_001")  # RENAME TO SOMETHING MEANINGFUL FOR YOUR DATA
+        save_dir = os.path.join(MODELS_DIR, "PortaSpeech_LJSpeech_FrozenCNN_RN_0_001")  # RENAME TO SOMETHING MEANINGFUL FOR YOUR DATA
     os.makedirs(save_dir, exist_ok=True)
 
     all_train_sets = list()  # YOU CAN HAVE MULTIPLE LANGUAGES, OR JUST ONE. JUST MAKE ONE ConcatDataset PER LANGUAGE AND ADD IT TO THE LIST.

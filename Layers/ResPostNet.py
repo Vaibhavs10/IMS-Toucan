@@ -32,9 +32,9 @@ class Block(BaseModule):
         self.block = torch.nn.Sequential(torch.nn.Conv2d(dim, dim, 7, 
                      padding=3), torch.nn.GroupNorm(groups, dim), Mish())
 
-    def forward(self, x, mask):
-        output = self.block(x * mask)
-        return output * mask
+    def forward(self, x):
+        output = self.block(x)
+        return output
 
 
 class ResnetBlock(BaseModule):
@@ -44,10 +44,10 @@ class ResnetBlock(BaseModule):
         self.block2 = Block(dim, groups=groups)
         self.res = torch.nn.Conv2d(dim, dim, 1)
 
-    def forward(self, x, mask):
-        h = self.block1(x, mask)
-        h = self.block2(h, mask)
-        output = self.res(x * mask) + h
+    def forward(self, x):
+        h = self.block1(x)
+        h = self.block2(h)
+        output = self.res(x) + h
         return output
 
 
@@ -58,10 +58,9 @@ class PostNet(BaseModule):
         self.res_block = ResnetBlock(dim, groups=groups)
         self.final_conv = torch.nn.Conv2d(dim, 1, 1)
 
-    def forward(self, x, mask):
+    def forward(self, x):
         x = x.unsqueeze(1)
-        mask = mask.unsqueeze(1)
-        x = self.init_conv(x * mask)
-        x = self.res_block(x, mask)
-        output = self.final_conv(x * mask)
+        x = self.init_conv(x)
+        x = self.res_block(x)
+        output = self.final_conv(x)
         return output.squeeze(1)
