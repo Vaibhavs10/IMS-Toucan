@@ -369,7 +369,7 @@ class PortaSpeech(torch.nn.Module, ABC):
         # # postnet -> (B, Lmax//r * r, odim)
         # after_outs = before_outs + self.postnet(before_outs.transpose(1, 2)).transpose(1, 2)
 
-        predicted_spectrogram_after_generator = predicted_spectrogram_before_postnet + self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2).unsqueeze(1)).transpose(1, 2)
+        predicted_spectrogram_after_generator = self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2).unsqueeze(1)).transpose(1, 2)
         
         glow_loss = None
         if not is_inference:
