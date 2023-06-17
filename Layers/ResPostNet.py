@@ -1,32 +1,32 @@
 import torch
 import numpy as np
 
-class BaseModule(torch.nn.Module):
-    def __init__(self):
-        super(BaseModule, self).__init__()
+# class BaseModule(torch.nn.Module):
+#     def __init__(self):
+#         super(BaseModule, self).__init__()
 
-    @property
-    def nparams(self):
-        num_params = 0
-        for name, param in self.named_parameters():
-            if param.requires_grad:
-                num_params += np.prod(param.detach().cpu().numpy().shape)
-        return num_params
-
-
-    def relocate_input(self, x: list):
-        device = next(self.parameters()).device
-        for i in range(len(x)):
-            if isinstance(x[i], torch.Tensor) and x[i].device != device:
-                x[i] = x[i].to(device)
-        return x
+#     @property
+#     def nparams(self):
+#         num_params = 0
+#         for name, param in self.named_parameters():
+#             if param.requires_grad:
+#                 num_params += np.prod(param.detach().cpu().numpy().shape)
+#         return num_params
 
 
-class Mish(BaseModule):
+#     def relocate_input(self, x: list):
+#         device = next(self.parameters()).device
+#         for i in range(len(x)):
+#             if isinstance(x[i], torch.Tensor) and x[i].device != device:
+#                 x[i] = x[i].to(device)
+#         return x
+
+
+class Mish(torch.nn.Module):
     def forward(self, x):
         return x * torch.tanh(torch.nn.functional.softplus(x))
 
-class Block(BaseModule):
+class Block(torch.nn.Module):
     def __init__(self, dim, groups=8):
         super(Block, self).__init__()
         self.block = torch.nn.Sequential(torch.nn.Conv2d(dim, dim, 7, 
@@ -37,7 +37,7 @@ class Block(BaseModule):
         return output
 
 
-class ResnetBlock(BaseModule):
+class ResnetBlock(torch.nn.Module):
     def __init__(self, dim, groups=8):
         super(ResnetBlock, self).__init__()
         self.block1 = Block(dim, groups=groups)
@@ -51,7 +51,7 @@ class ResnetBlock(BaseModule):
         return output
 
 
-class PostNet(BaseModule):
+class PostNet(torch.nn.Module):
     def __init__(self, dim, groups=8):
         super(PostNet, self).__init__()
         self.init_conv = torch.nn.Conv2d(1, dim, 1)
