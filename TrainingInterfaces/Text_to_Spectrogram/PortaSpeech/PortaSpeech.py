@@ -201,33 +201,11 @@ class PortaSpeech(torch.nn.Module, ABC):
         self.decoder_out_embedding_projection = Sequential(Linear(output_spectrogram_channels + utt_embed_dim,
                                                                   output_spectrogram_channels),
                                                           LayerNorm(output_spectrogram_channels))
-        # # define postnet
-        # self.postnet = PostNet(idim=idim, odim=odim, n_layers=postnet_layers, n_chans=postnet_chans,
-        #                        n_filts=postnet_filts, use_batch_norm=use_batch_norm,
-        #                        dropout_rate=postnet_dropout_rate)
+
         # define postnet
         self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
                                n_filts=5, use_batch_norm=True,
                                dropout_rate=0.5)                               
-        # post net is realized as a flow
-        # gin_channels = attention_dimension
-        # self.post_flow = Glow(
-        #     in_channels=output_spectrogram_channels,
-        #     hidden_channels=192,  # post_glow_hidden  (original 192 in paper)
-        #     kernel_size=3,  # post_glow_kernel_size
-        #     dilation_rate=1,
-        #     n_blocks=16,  # post_glow_n_blocks (original 12 in paper)
-        #     n_layers=3,  # post_glow_n_block_layers (original 3 in paper)
-        #     n_split=4,
-        #     n_sqz=2,
-        #     gin_channels=gin_channels,
-        #     share_cond_layers=False,  # post_share_cond_layers
-        #     share_wn_layers=4,  # share_wn_layers
-        #     sigmoid_scale=False  # sigmoid_scale
-        # )
-        # self.prior_dist = dist.Normal(0, 1)
-
-        # self.g_proj = torch.nn.Conv1d(output_spectrogram_channels + attention_dimension, gin_channels, 5, padding=2)
 
         # initialize parameters
         self._reset_parameters(init_type=init_type, init_enc_alpha=init_enc_alpha, init_dec_alpha=init_dec_alpha)
