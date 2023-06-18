@@ -8,7 +8,8 @@ from Layers.Conformer import Conformer
 from Layers.DurationPredictor import DurationPredictor
 from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
-from Layers.PostNet import PostNet
+# from Layers.PostNet import PostNet
+from Layers.PostUNet import PostUNet
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
 from Utility.utils import make_non_pad_mask
@@ -178,9 +179,12 @@ class PortaSpeech(torch.nn.Module):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
-        self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
-                               n_filts=5, use_batch_norm=True,
-                               dropout_rate=0.5)                               
+        # self.postnet = PostNet(idim=input_feature_dimensions, odim=output_spectrogram_channels, n_layers=5, n_chans=256,
+        #                        n_filts=5, use_batch_norm=True,
+        #                        dropout_rate=0.5)                               
+        
+        self.postnet = PostUNet()
+
         # post net is realized as a flow
         # gin_channels = attention_dimension
         # self.post_flow = Glow(
