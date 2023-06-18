@@ -8,6 +8,7 @@ from Layers.Conformer import Conformer
 from Layers.DurationPredictor import DurationPredictor
 from Layers.LengthRegulator import LengthRegulator
 from Layers.VariancePredictor import VariancePredictor
+from Layers.PostUNet import PostUNet
 from Preprocessing.articulatory_features import get_feature_to_index_lookup
 from TrainingInterfaces.Text_to_Spectrogram.PortaSpeech.Glow import Glow
 from Utility.utils import make_non_pad_mask
@@ -177,6 +178,8 @@ class PortaSpeech(torch.nn.Module):
                                                                   output_spectrogram_channels),
                                                            LayerNorm(output_spectrogram_channels))
 
+        self.postnet = PostUNet()
+
         # post net is realized as a flow
         # gin_channels = attention_dimension
         # self.post_flow = Glow(
@@ -292,7 +295,7 @@ class PortaSpeech(torch.nn.Module):
         #                                                 projection=self.decoder_out_embedding_projection)
         # else:
         #     before_enriched = predicted_spectrogram_before_postnet
-        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet
+        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet + self.postnet(predicted_spectrogram_before_postnet.transpose(1, 2).unsqueeze(1)).transpose(1, 2) 
 
         return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
 
