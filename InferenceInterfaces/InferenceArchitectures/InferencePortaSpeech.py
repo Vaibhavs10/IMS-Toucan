@@ -303,7 +303,7 @@ class PortaSpeech(torch.nn.Module):
         # predicted_spectrogram_after_postnet = self.run_post_glow(mel_out=before_enriched,
         #                                                          encoded_texts=encoded_texts,
         #                                                          device=device)
-        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet + self.postnet(before_enriched.transpose(1, 2)).transpose(1, 2)
+        predicted_spectrogram_after_postnet = predicted_spectrogram_before_postnet + self.postnet(before_enriched.transpose(1, 2).unsqueeze(1)).transpose(1, 2)
 
         return predicted_spectrogram_before_postnet, predicted_spectrogram_after_postnet, predicted_durations, pitch_predictions, energy_predictions
 
