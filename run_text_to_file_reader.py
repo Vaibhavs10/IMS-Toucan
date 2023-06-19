@@ -174,4 +174,4 @@ if __name__ == '__main__':
     # read_harvard_sentences_03(model_id="LJSpeech_FrozenSD_0_0005_10k_60k_stp", device="cuda:0")
     # read_harvard_sentences_01(model_id="LJSpeech_FrozenSD_0_0005_10k_60k_stp", device="cuda:0")    
     # read_harvard_sentences_06(model_id="LJSpeech_FrozenSDiff_0_0005_10k_lin_15k", device="cuda:0")
-    read_harvard_sentences_06(model_id="LJSpeech_FrozenSD_0_0005_10k_60k_stp", device="cuda:0")    
+    read_harvard_sentences_06(model_id="LJSpeech_FrozenSD_0_0005_10k_90k_stp", device="cuda:0")    
