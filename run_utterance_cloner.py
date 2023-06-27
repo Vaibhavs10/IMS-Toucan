@@ -1,3 +1,4 @@
+import os
 import torch
 
 from InferenceInterfaces.UtteranceCloner import UtteranceCloner
@@ -12,12 +13,12 @@ def create_mos_survey_samples(model_id):
     
     for file_num in ["112", "181", "174", "126", "165", "072"]:
         
-        base_file_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/txt/LJ050-0{}.txt"
+        base_file_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/txt/LJ050-0{file_num}.txt"
 
         with open(base_file_path, 'r', encoding='utf8') as base_tf:
             transcript = tf.read()
         
-        base_wav_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-0{}.wav"
+        base_wav_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-0{file_num}.wav"
         
         uc.clone_utterance(
             path_to_reference_audio=base_wav_path,
@@ -28,7 +29,7 @@ def create_mos_survey_samples(model_id):
 
 
 if __name__ == '__main__':
-    create_mos_survey_samples()
+    create_mos_survey_samples(model_id="LJSpeech_No_0_003_scratch")
     # uc.biblical_accurate_angel_mode(path_to_reference_audio="audios/test.wav",
     #                                 reference_transcription="Hello world, this is a test.",
     #                                 filename_of_result="audios/test_cloned_angelic.wav",
