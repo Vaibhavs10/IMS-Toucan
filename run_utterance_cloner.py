@@ -16,7 +16,7 @@ def create_mos_survey_samples(model_id):
         base_file_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/txt/LJ050-0{file_num}.txt"
 
         with open(base_file_path, 'r', encoding='utf8') as base_tf:
-            transcript = tf.read()
+            transcript = base_tf.read()
         
         base_wav_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-0{file_num}.wav"
         
@@ -27,9 +27,19 @@ def create_mos_survey_samples(model_id):
             clone_speaker_identity=False,
             lang="en")
 
+def get_text():
+    for file_num in ["112", "181", "174", "126", "165", "072"]:
+        
+        base_file_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/txt/LJ050-0{file_num}.txt"
+
+        with open(base_file_path, 'r', encoding='utf8') as base_tf:
+            transcript = base_tf.read()
+        
+        print(transcript)
 
 if __name__ == '__main__':
-    create_mos_survey_samples(model_id="LJSpeech_No_0_003_scratch")
+    # create_mos_survey_samples(model_id="LJSpeech_No_0_003_scratch")
+    get_text()
     # uc.biblical_accurate_angel_mode(path_to_reference_audio="audios/test.wav",
     #                                 reference_transcription="Hello world, this is a test.",
     #                                 filename_of_result="audios/test_cloned_angelic.wav",
