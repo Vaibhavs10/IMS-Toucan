@@ -2,10 +2,8 @@ import torch
 
 from InferenceInterfaces.UtteranceCloner import UtteranceCloner
 
-if __name__ == '__main__':
-    uc = UtteranceCloner(model_id="Meta", device="cuda" if torch.cuda.is_available() else "cpu")
-
-
+def create_mos_survey_samples(model_id):
+    uc = UtteranceCloner(model_id=model_id, device="cuda" if torch.cuda.is_available() else "cpu")
     for file_num in ["112", "181", "174", "126", "165", "072"]:
         
         base_file_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/txt/LJ050-0{}.txt"
@@ -21,6 +19,9 @@ if __name__ == '__main__':
             filename_of_result=f"audios/no_postnet{file_num}.wav",
             clone_speaker_identity=False,
             lang="en")
+
+
+if __name__ == '__main__':
 
     # uc.biblical_accurate_angel_mode(path_to_reference_audio="audios/test.wav",
     #                                 reference_transcription="Hello world, this is a test.",
