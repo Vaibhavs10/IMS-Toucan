@@ -28,6 +28,17 @@ def read_texts_as_ensemble(model_id, sentence, filename, device="cpu", language=
         tts.default_utterance_embedding = torch.zeros(256).float().random_(-40, 40).to(device)
         tts.read_to_file(text_list=sentence, file_location=filename + f"_{index}" + ".wav")
 
+def read_mos_sentences(model_id, device):
+    tts = PortaSpeechInterface(device=device, tts_model_path=model_id)
+
+    with open("Utility/mos_sentences.txt", "r", encoding="utf8") as f:
+        sents = f.read().split("\n")
+    output_dir = "audios/mos_sentences_{}".format(model_id)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    for index, sent in enumerate(sents):
+        tts.read_to_file(text_list=[sent], file_location=output_dir + "/{}.wav".format(index))
+
 
 def read_harvard_sentences(model_id, device):
     tts = PortaSpeechInterface(device=device, tts_model_path=model_id)
@@ -171,4 +182,5 @@ if __name__ == '__main__':
     print(f"running on {exec_device}")
 
     # le_corbeau_et_le_renard(version="NEB_baseline", model_id="NEB", exec_device=exec_device)
-    read_harvard_sentences(model_id="LJSpeech_FrozenCNN2D_SG_0_001", device="cuda:0")
+    # read_harvard_sentences(model_id="LJSpeech_FrozenCNN2D_SG_0_001", device="cuda:0")
+    read_mos_sentences(model_id="LJSpeech_FrozenCNN2D_SG_0_001", device="cuda:0")
