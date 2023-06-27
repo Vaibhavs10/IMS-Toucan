@@ -4,6 +4,12 @@ from InferenceInterfaces.UtteranceCloner import UtteranceCloner
 
 def create_mos_survey_samples(model_id):
     uc = UtteranceCloner(model_id=model_id, device="cuda" if torch.cuda.is_available() else "cpu")
+    
+    output_dir = f"audios/MOS_Survey_{model_id}"
+    
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    
     for file_num in ["112", "181", "174", "126", "165", "072"]:
         
         base_file_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/txt/LJ050-0{}.txt"
@@ -16,13 +22,13 @@ def create_mos_survey_samples(model_id):
         uc.clone_utterance(
             path_to_reference_audio=base_wav_path,
             reference_transcription=transcript,
-            filename_of_result=f"audios/no_postnet{file_num}.wav",
+            filename_of_result=output_dir+f"/{file_num}.wav",
             clone_speaker_identity=False,
             lang="en")
 
 
 if __name__ == '__main__':
-
+    create_mos_survey_samples()
     # uc.biblical_accurate_angel_mode(path_to_reference_audio="audios/test.wav",
     #                                 reference_transcription="Hello world, this is a test.",
     #                                 filename_of_result="audios/test_cloned_angelic.wav",
