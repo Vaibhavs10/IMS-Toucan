@@ -14,13 +14,15 @@ from pedalboard import NoiseGate
 from pedalboard import PeakFilter
 from pedalboard import Pedalboard
 
-from InferenceInterfaces.InferenceArchitectures.InferenceAvocodo import HiFiGANGenerator
+# from InferenceInterfaces.InferenceArchitectures.InferenceAvocodo import HiFiGANGenerator
+from InferenceInterfaces.InferenceArchitectures.InferenceBigVGAN import BigVGAN
 from InferenceInterfaces.InferenceArchitectures.InferencePortaSpeech import PortaSpeech
 from Preprocessing.AudioPreprocessor import AudioPreprocessor
 from Preprocessing.TextFrontend import ArticulatoryCombinedTextFrontend
 from Preprocessing.TextFrontend import get_language_id
 from TrainingInterfaces.Spectrogram_to_Embedding.StyleEmbedding import StyleEmbedding
 from Utility.storage_config import MODELS_DIR
+from Utility.utils import float2pcm
 
 
 class PortaSpeechInterface(torch.nn.Module):
@@ -43,7 +45,8 @@ class PortaSpeechInterface(torch.nn.Module):
             # default to shorthand system
             tts_model_path = os.path.join(MODELS_DIR, f"PortaSpeech_{tts_model_path}", "best.pt")
         if vocoder_model_path is None:
-            vocoder_model_path = os.path.join(MODELS_DIR, "Avocodo", "best.pt")
+            # vocoder_model_path = os.path.join(MODELS_DIR, "Avocodo", "best.pt")
+            vocoder_model_path = os.path.join(MODELS_DIR, "Avocodo", "BigVGAN.pt")            
         self.use_signalprocessing = use_signalprocessing
         if self.use_signalprocessing:
             self.effects = Pedalboard(plugins=[HighpassFilter(cutoff_frequency_hz=60),
@@ -97,7 +100,7 @@ class PortaSpeechInterface(torch.nn.Module):
         ################################
         #  load mel to wave model      #
         ################################
-        self.mel2wav = HiFiGANGenerator(path_to_weights=vocoder_model_path).to(torch.device(device))
+        self.mel2wav = BigVGAN(path_to_weights=vocoder_model_path).to(torch.device(device))
         self.mel2wav.remove_weight_norm()
 
         ################################
@@ -286,7 +289,8 @@ class PortaSpeechInterface(torch.nn.Module):
         if not energy_list:
             energy_list = []
         wav = None
-        silence = torch.zeros([24000])
+        silence = torch.zeros([10600])
+        wav = silence.clone()
         for (text, durations, pitch, energy) in itertools.zip_longest(text_list, dur_list, pitch_list, energy_list):
             if text.strip() != "":
                 if not silent:
@@ -309,7 +313,10 @@ class PortaSpeechInterface(torch.nn.Module):
                                                pitch_variance_scale=pitch_variance_scale,
                                                energy_variance_scale=energy_variance_scale).cpu()), 0)
                     wav = torch.cat((wav, silence), 0)
-        soundfile.write(file=file_location, data=wav.cpu().numpy(), samplerate=24000)
+
+        wav = [val for val in wav.numpy() for _ in (0, 1)]  # doubling the sampling rate for better compatibility (24kHz is not as standard as 48kHz)
+        soundfile.write(file=file_location, data=float2pcm(wav), samplerate=48000, subtype="PCM_16")
+        # soundfile.write(file=file_location, data=wav.cpu().numpy(), samplerate=24000)
 
     def read_aloud(self,
                    text,
