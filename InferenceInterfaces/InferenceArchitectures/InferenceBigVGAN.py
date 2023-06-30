@@ -70,6 +70,7 @@ class BigVGAN(torch.nn.Module):
         self.load_state_dict(torch.load(path_to_weights, map_location='cpu')["generator"])
 
     def forward(self, x):
+        x = x.unsqueeze(0)
         # pre conv
         x = self.conv_pre(x)
 
