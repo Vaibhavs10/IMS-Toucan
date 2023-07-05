@@ -1,4 +1,5 @@
 import os
+import glob
 import shutil
 import torch
 
@@ -19,6 +20,23 @@ def create_lj_audio_folder():
         
         wav_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-0{file_num}.wav"
         dst_path = output_dir + f"/LJ050-0{file_num}.wav"
+
+        shutil.copy(wav_path, dst_path)
+
+def create_lj50_audio_folder():
+    
+    output_dir = f"audios/lj50_GT_samples"
+    
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    
+    folder_path = "/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-*.wav"
+    list_of_files = glob.glob(folder_path)
+
+    for f in list_of_files:
+        
+        wav_path = f
+        dst_path = output_dir + "/" + f.split("/")[-1]
 
         shutil.copy(wav_path, dst_path)
 
@@ -53,4 +71,4 @@ def create_lj_vc_audio_folder():
 
 
 if __name__ == '__main__':
-    create_lj_vc_audio_folder()
+    create_lj50_audio_folder()
