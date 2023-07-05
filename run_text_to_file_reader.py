@@ -99,7 +99,16 @@ def read_harvard_sentences_06(model_id, device):
     for index, sent in enumerate(sents):
         tts.read_to_file(text_list=[sent], file_location=output_dir + "/{}.wav".format(index))
 
+def read_lj50_sentences(model_id, device):
+    tts = PortaSpeechInterface(device=device, tts_model_path=model_id)
 
+    with open("Utility/lj_50_sentences.txt", "r", encoding="utf8") as f:
+        sents = f.read().split("\n")
+    output_dir = "audios/lj50{}".format(model_id)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    for index, sent in enumerate(sents):
+        tts.read_to_file(text_list=[sent], file_location=output_dir + "/{}.wav".format(index))
 
 def le_corbeau_et_le_renard(version, model_id="Meta", exec_device="cpu"):
     os.makedirs("audios", exist_ok=True)
@@ -182,5 +191,6 @@ if __name__ == '__main__':
     print(f"running on {exec_device}")
 
     # le_corbeau_et_le_renard(version="NEB_baseline", model_id="NEB", exec_device=exec_device)
-    # read_harvard_sentences(model_id="LJSpeech_FrozenFlow_0_001", device="cuda:1")
-    read_mos_sentences(model_id="LJSpeech_FrozenFlow_0_002_15k", device="cuda:1")
+    read_harvard_sentences(model_id="LJSpeech_FrozenFlow_0_002_15k", device="cuda:1")
+    # read_mos_sentences(model_id="LJSpeech_FrozenFlow_0_002_15k", device="cuda:1")
+    # read_lj50_sentences(model_id="LJSpeech_FrozenFlow_0_002_15k", device="cuda:1")    
