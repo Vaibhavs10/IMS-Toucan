@@ -42,7 +42,7 @@ def create_lj50_audio_folder():
 
 def create_lj_vc_audio_folder():
     
-    output_dir = f"audios/lj_50_vc_eval_samples"
+    output_dir = f"audios/lj50_GT_VC_samples"
     vocoder_model_path = "/mount/arbeitsdaten56/projekte/synthesis/srivasvv/thesis-playground/tts-postnet-eval/IMS-Toucan/Models/Avocodo/BigVGAN.pt"
     
     if not os.path.isdir(output_dir):
@@ -52,14 +52,14 @@ def create_lj_vc_audio_folder():
     mel2wav.remove_weight_norm()
     mel2wav.eval()        
     
-    l = ["112", "181", "174", "126", "165", "072"]
+    folder_path = "/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-*.wav"
+    list_of_files = glob.glob(folder_path)
 
-    for file_num in ["112", "181", "174", "126", "165", "072"]:
+    for f in list_of_files:
         
-        wav_path = f"/mount/resources/speech/corpora/LJSpeech/16kHz/wav/LJ050-0{file_num}.wav"
-        file_location = output_dir + f"/LJ050-0{file_num}.wav"
+        file_location = output_dir + "/" + f.split("/")[-1]
         
-        wav, sr = soundfile.read(wav_path)
+        wav, sr = soundfile.read(f)
 
         ap = AudioPreprocessor(input_sr=sr, output_sr=16000, cut_silence=True)
 
@@ -71,4 +71,4 @@ def create_lj_vc_audio_folder():
 
 
 if __name__ == '__main__':
-    create_lj50_audio_folder()
+    create_lj_vc_audio_folder()
